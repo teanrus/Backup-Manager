@@ -113,7 +113,7 @@ bash ./rpm-build/build-rpm.sh
 Готовый RPM ожидается по пути:
 
 ```text
-~/rpmbuild/RPMS/noarch/backup-manager-3.1.1-1.<суффикс>.noarch.rpm
+~/rpmbuild/RPMS/noarch/backup-manager-3.1.1-2.<суффикс>.noarch.rpm
 ```
 
 Фактическое имя файла может включать дополнительный суффикс дистрибутива. Посмотреть созданные пакеты можно так:
@@ -137,7 +137,7 @@ make rpm
 Установите собранный пакет с помощью пакетного менеджера целевого RPM-дистрибутива. Например, если пакет найден в `~/rpmbuild/RPMS/noarch/`:
 
 ```bash
-sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.1.1-1*.rpm
+sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.1.1-2*.rpm
 ```
 
 Во время установки RPM пытается настроить systemd и запустить Nginx и API. Однако полноценный доступ к приложению появляется только после создания токена и файла авторизации — это делает следующий сценарий.
@@ -228,14 +228,14 @@ sudo journalctl -u backup-manager-api.service -n 100 --no-pager
 sudo journalctl -u nginx.service -n 100 --no-pager
 ```
 
-Файл журнала событий заданий и ошибок Nginx:
+Файл журнала ошибок и доступа Nginx находится в стандартном каталоге Nginx:
 
 ```text
-/var/log/backup-manager/nginx-error.log
-/var/log/backup-manager/nginx-access.log
+/var/log/nginx/backup-manager-error.log
+/var/log/nginx/backup-manager-access.log
 ```
 
-Журнал операций резервного копирования также доступен в веб-интерфейсе; его данные хранятся в файле состояния backend.
+Скрипты резервного копирования продолжают записывать журналы в `/var/log/backup-manager/`. Журнал операций также доступен в веб-интерфейсе; его данные хранятся в файле состояния backend.
 
 ### Проверка конфигурации Nginx
 
@@ -257,7 +257,8 @@ sudo ss -ltnp | grep -E '127\.0\.0\.1:(8080|3001)'
 
 - **Сценарий настройки сообщает об отсутствии группы `nginx`.** В текущей RPM-интеграции Nginx должен использовать системную группу `nginx`. Проверьте состав пакета Nginx в установленном дистрибутиве; другая группа потребует адаптации сценария и прав на `/etc/backup-manager/htpasswd`.
 - **API не запускается до настройки.** Это ожидаемо: systemd unit имеет `ConditionPathExists=/etc/backup-manager/api-token`. Выполните `setup.sh`, чтобы создать токен и включить сервис.
-- **Nginx не запускается или не проходит проверку конфигурации.** Проверьте `nginx -t`, наличие файла `/etc/backup-manager/htpasswd`, владельца/группу и права чтения для Nginx.
+- **Nginx не запускается с ошибкой доступа к логам.** RPM направляет access/error логи Nginx в `/var/log/nginx/`, где системная политика SELinux уже задаёт контекст для логов веб-сервера. Проверьте `ls -Zd /var/log/nginx`, `sudo nginx -t` и наличие `/etc/backup-manager/htpasswd`; не меняйте владельца всего `/var/log/backup-manager`, где хранятся журналы backup-скриптов.
+- **В интерфейсе появляется «API вернул не JSON» или прежняя ошибка `Unexpected token '<'`.** Обычно вместо ответа API пришла HTML-страница Nginx: проверьте, что выполнен `setup.sh`, а API и Nginx запущены. Выполните `sudo nginx -t` и `sudo systemctl status backup-manager-api nginx`; затем откройте `http://localhost:8080` и войдите с паролем, выведенным `setup.sh`. Если API не запущен или Nginx не проходит проверку, смотрите журналы командами `sudo journalctl -u backup-manager-api -u nginx -n 50 --no-pager` и `sudo tail -n 50 /var/log/nginx/backup-manager-error.log`.
 - **Не проходит SMB-проверка.** Проверьте адрес сервера, имя ресурса, учётные данные, доступность сети и наличие `smbclient`.
 - **Не выполняется копирование.** Проверьте, что backend работает на Linux, установлены `rsync` и `cifs-utils`, источник существует, а сервис имеет возможность смонтировать SMB. Подробная ошибка должна быть в журнале приложения и systemd.
 - **`EHOSTDOWN` для `/mnt/backup`.** SMB-сервер или сеть недоступны, а CIFS-монтирование могло остаться активным. Проверьте доступность сервера и вывод `sudo findmnt --mountpoint /mnt/backup`; после восстановления сервера при необходимости размонтируйте точку командой `sudo umount /mnt/backup`, затем повторите задание.

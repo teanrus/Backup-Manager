@@ -34,8 +34,26 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   });
-  const body = await response.json();
-  if (!response.ok) throw new Error(body.error || `Ошибка запроса (${response.status}).`);
+
+  if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
+    throw new Error(
+      `API вернул не JSON (HTTP ${response.status}). Проверьте первоначальную настройку и состояние служб backup-manager-api и nginx.`,
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(`API вернул некорректный JSON (HTTP ${response.status}).`);
+  }
+
+  if (!response.ok) {
+    const error = body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+      ? body.error
+      : `Ошибка запроса (${response.status}).`;
+    throw new Error(error);
+  }
   return body as T;
 }
 

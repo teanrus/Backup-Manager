@@ -1,6 +1,6 @@
 Name:           backup-manager
 Version:        3.1.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Backup Manager for SMB/CIFS
 License:        MIT
 URL:            https://github.com/teanrus/backup-manager-t1
@@ -118,7 +118,7 @@ fi
 if [ -f "$MIGRATION_DIR/nginx.conf" ]; then
     sed \
         -e 's#/usr/share/redos-backup-manager#/usr/share/backup-manager#g' \
-        -e 's#/var/log/redos-backup#/var/log/backup-manager#g' \
+        -e 's#/var/log/redos-backup#/var/log/nginx#g' \
         "$MIGRATION_DIR/nginx.conf" > "$MIGRATION_DIR/backup-manager.conf"
     install -m 644 "$MIGRATION_DIR/backup-manager.conf" /etc/nginx/conf.d/backup-manager.conf
 fi
@@ -231,6 +231,10 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-2
+- Write Nginx logs to the standard SELinux-labeled nginx log directory
+- Bump RPM release to 2
+
 * Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-1
 - Exclude ThinLinc redirected drives from home-directory backups
 - Bump application and package version to 3.1.1
