@@ -1,6 +1,6 @@
 Name:           backup-manager
 Version:        3.1.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Backup Manager for SMB/CIFS
 License:        MIT
 URL:            https://github.com/teanrus/backup-manager-t1
@@ -15,6 +15,7 @@ Requires:       cifs-utils
 Requires:       samba-client
 Requires:       openssl
 Requires:       systemd
+Requires:       policycoreutils
 
 BuildRequires:  systemd
 
@@ -134,6 +135,9 @@ rm -rf "$MIGRATION_DIR"
 mkdir -p /var/lib/backup-manager /var/run/backup-manager /mnt/backup
 chmod 700 /var/lib/backup-manager
 chmod 755 /var/log/backup-manager /var/run/backup-manager
+if [ -e /sys/fs/selinux/enforce ]; then
+    setsebool -P httpd_can_network_connect on
+fi
 
 %posttrans
 systemctl daemon-reload >/dev/null 2>&1 || true
@@ -231,6 +235,10 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-3
+- Allow Nginx to connect to the local API when SELinux is enabled
+- Bump RPM release to 3
+
 * Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-2
 - Write Nginx logs to the standard SELinux-labeled nginx log directory
 - Bump RPM release to 2

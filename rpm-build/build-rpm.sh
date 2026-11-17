@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PKG_NAME="backup-manager"
 PKG_VERSION="3.1.1"
-PKG_RELEASE="2"
+PKG_RELEASE="3"
 
 echo "=========================================="
 echo " Сборка RPM пакета: $PKG_NAME"
