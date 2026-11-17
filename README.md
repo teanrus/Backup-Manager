@@ -108,14 +108,16 @@ make rpm
 
 ## Скриншоты
 
-![Обзор](<assets/Screenshot_20261116_154420 (2).png>)
+![Обзор](<assets/Backup-Manager-002.png>)
 
-![Задания](<assets/Screenshot_20261116_154434 (2).png>)
+![Задания](<assets/Backup-Manager-001.png>)
 
-![Расписания](<assets/Screenshot_20261116_154447 (2).png>)
+![Расписания](<assets/Backup-Manager-004.png>)
 
-![SMB сервер](<assets/Screenshot_20261116_154457 (2).png>)
+![SMB сервер](<assets/Backup-Manager-005.png>)
 
-![Настройки](<assets/Screenshot_20261116_154519 (2).png>)
+![Настройки](<assets/Backup-Manager-006.png>)
 
-![О программе](<assets/Screenshot_20261116_154535 (2).png>)
+![Настройки](<assets/Backup-Manager-007.png>)
+
+![О программе](<assets/Backup-Manager-008.png>)
