@@ -1,0 +1,94 @@
+#!/bin/bash
+#
+# Backup Manager - полное удаление
+#
+
+set -euo pipefail
+
+echo "=========================================="
+echo " Backup Manager - полное удаление"
+echo "=========================================="
+echo ""
+
+# Проверка прав root
+if [ "$EUID" -ne 0 ]; then
+    echo "ОШИБКА: Скрипт должен быть запущен от имени root"
+    echo "Используйте: sudo $0"
+    exit 1
+fi
+
+# Подтверждение
+read -p "Вы уверены, что хотите полностью удалить систему? (y/N): " CONFIRM
+if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
+    echo "Отменено."
+    exit 0
+fi
+
+echo ""
+echo "Удаление компонентов..."
+
+# Остановка сервисов
+echo "  Остановка сервисов..."
+systemctl stop redos-backup-manager.timer 2>/dev/null || true
+systemctl stop redos-backup-manager.service 2>/dev/null || true
+systemctl stop backup-manager-api.service 2>/dev/null || true
+systemctl stop nginx 2>/dev/null || true
+
+# Удаление systemd юнитов
+echo "  Удаление systemd юнитов..."
+rm -f /usr/lib/systemd/system/redos-backup-manager.service
+rm -f /usr/lib/systemd/system/redos-backup-manager.timer
+rm -f /usr/lib/systemd/system/backup-manager-api.service
+systemctl daemon-reload
+
+# Удаление конфигурации
+echo "  Удаление конфигурации..."
+rm -rf /etc/redos-backup-manager
+rm -rf /etc/backup-manager
+rm -f /etc/nginx/conf.d/redos-backup-manager.conf
+rm -f /etc/nginx/conf.d/backup-manager.conf
+rm -f /etc/cron.d/redos-backup-manager
+
+# Удаление файлов приложения
+echo "  Удаление файлов приложения..."
+rm -rf /usr/share/redos-backup-manager
+rm -rf /usr/share/backup-manager
+
+# Удаление desktop файла
+echo "  Удаление ярлыка из меню..."
+rm -f /usr/share/applications/redos-backup-manager.desktop
+rm -f /usr/share/applications/backup-manager.desktop
+update-desktop-database 2>/dev/null || true
+
+# Удаление логов
+echo "  Удаление журналов..."
+rm -rf /var/log/redos-backup
+rm -rf /var/log/backup-manager
+rm -rf /var/lib/backup-manager
+
+# Удаление lock-директории
+rm -rf /var/run/redos-backup
+rm -rf /var/run/backup-manager
+
+# Удаление точки монтирования (если пуста)
+if mountpoint -q /mnt/backup 2>/dev/null; then
+    umount /mnt/backup 2>/dev/null || true
+fi
+if [ -d /mnt/backup ] && [ -z "$(ls -A /mnt/backup 2>/dev/null)" ]; then
+    rmdir /mnt/backup 2>/dev/null || true
+fi
+
+# Удаление fstab записи
+if grep -q "redos-backup" /etc/fstab 2>/dev/null; then
+    sed -i '/redos-backup/d' /etc/fstab
+    echo "  Удалена запись из /etc/fstab"
+fi
+
+echo ""
+echo "=========================================="
+echo " ✓ Удаление завершено"
+echo "=========================================="
+echo ""
+echo " Примечание: Резервные копии на удалённом"
+echo " SMB сервере НЕ были удалены."
+echo "=========================================="

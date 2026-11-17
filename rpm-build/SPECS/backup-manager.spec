@@ -1,0 +1,280 @@
+Name:           backup-manager
+Version:        3.1.1
+Release:        1%{?dist}
+Summary:        Backup Manager for SMB/CIFS
+License:        MIT
+URL:            https://github.com/teanrus/backup-manager-t1
+BuildArch:      noarch
+Obsoletes:      redos-backup-manager < 2.17.2-2
+Provides:       redos-backup-manager = %{version}-%{release}
+
+Requires:       nginx
+Requires:       nodejs >= 18
+Requires:       rsync
+Requires:       cifs-utils
+Requires:       samba-client
+Requires:       openssl
+Requires:       systemd
+
+BuildRequires:  systemd
+
+%description
+Приложение для локального управления резервным копированием каталогов
+на SMB/CIFS сервер с помощью rsync.
+
+Возможности:
+- Настройка подключения к SMB серверу
+- Управление заданиями резервного копирования
+- Настройка расписания в backend
+- Ручной запуск копирования
+- Мониторинг и журнал операций
+- Автоматическое монтирование SMB ресурса
+- Инкрементальная синхронизация через rsync
+
+%prep
+# Исходный код уже собран в dist/ и помещён в SOURCES/dist/
+
+%build
+# Сборка выполнена на этапе подготовки
+
+%install
+# ==========================================
+# Создание директорий
+# ==========================================
+mkdir -p %{buildroot}/usr/share/backup-manager/web
+mkdir -p %{buildroot}/usr/share/backup-manager/scripts
+mkdir -p %{buildroot}/usr/share/backup-manager/server
+mkdir -p %{buildroot}/usr/share/backup-manager/icons
+mkdir -p %{buildroot}/etc/backup-manager
+mkdir -p %{buildroot}/etc/nginx/conf.d
+mkdir -p %{buildroot}/usr/lib/systemd/system
+mkdir -p %{buildroot}/usr/share/applications
+mkdir -p %{buildroot}%{_licensedir}/%{name}
+mkdir -p %{buildroot}/var/log/backup-manager
+mkdir -p %{buildroot}/var/run/backup-manager
+mkdir -p %{buildroot}/var/lib/backup-manager
+
+# ==========================================
+# Копирование веб-приложения
+# ==========================================
+cp -r %{_sourcedir}/dist/* %{buildroot}/usr/share/backup-manager/web/
+cp -r %{_sourcedir}/server/* %{buildroot}/usr/share/backup-manager/server/
+
+# ==========================================
+# Установка скриптов
+# ==========================================
+install -m 755 %{_sourcedir}/backup.sh %{buildroot}/usr/share/backup-manager/scripts/backup.sh
+install -m 755 %{_sourcedir}/backup-all.sh %{buildroot}/usr/share/backup-manager/scripts/backup-all.sh
+install -m 755 %{_sourcedir}/mount-smb.sh %{buildroot}/usr/share/backup-manager/scripts/mount-smb.sh
+install -m 755 %{_sourcedir}/setup.sh %{buildroot}/usr/share/backup-manager/scripts/setup.sh
+install -m 755 %{_sourcedir}/uninstall.sh %{buildroot}/usr/share/backup-manager/scripts/uninstall.sh
+
+# ==========================================
+# Установка конфигурации
+# ==========================================
+install -m 644 %{_sourcedir}/backup-manager.conf %{buildroot}/etc/nginx/conf.d/backup-manager.conf
+install -m 600 %{_sourcedir}/backup.conf %{buildroot}/etc/backup-manager/backup.conf
+
+# Установка systemd юнитов
+# ==========================================
+install -m 644 %{_sourcedir}/backup-manager-api.service %{buildroot}/usr/lib/systemd/system/backup-manager-api.service
+install -m 644 %{_sourcedir}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
+
+# ==========================================
+# Установка иконки и desktop файла
+# ==========================================
+install -m 644 %{_sourcedir}/backup-manager.png %{buildroot}/usr/share/backup-manager/icons/backup-manager.png
+install -m 644 %{_sourcedir}/backup-manager.desktop %{buildroot}/usr/share/applications/backup-manager.desktop
+
+# ==========================================
+# Создание файла журнала
+# ==========================================
+touch %{buildroot}/var/log/backup-manager/backup.log
+
+%pretrans -p /bin/sh
+set -e
+MIGRATION_DIR=/var/lib/backup-manager/.rpm-migration
+install -d -m 700 "$MIGRATION_DIR"
+if [ ! -e /etc/backup-manager/backup.conf ] && [ -f /etc/redos-backup-manager/backup.conf ]; then
+    cp -p /etc/redos-backup-manager/backup.conf "$MIGRATION_DIR/backup.conf"
+fi
+if [ ! -e /etc/nginx/conf.d/backup-manager.conf ] && [ -f /etc/nginx/conf.d/redos-backup-manager.conf ]; then
+    cp -p /etc/nginx/conf.d/redos-backup-manager.conf "$MIGRATION_DIR/nginx.conf"
+fi
+if [ ! -e /etc/backup-manager/smb-credentials ] && [ -f /etc/redos-backup-manager/smb-credentials ]; then
+    cp -p /etc/redos-backup-manager/smb-credentials "$MIGRATION_DIR/smb-credentials"
+fi
+if [ -d /var/log/redos-backup ]; then
+    mkdir -p "$MIGRATION_DIR/logs"
+    cp -a /var/log/redos-backup/. "$MIGRATION_DIR/logs/"
+fi
+
+%post
+set -e
+MIGRATION_DIR=/var/lib/backup-manager/.rpm-migration
+if [ -f "$MIGRATION_DIR/backup.conf" ]; then
+    install -m 600 "$MIGRATION_DIR/backup.conf" /etc/backup-manager/backup.conf
+fi
+if [ -f "$MIGRATION_DIR/nginx.conf" ]; then
+    sed \
+        -e 's#/usr/share/redos-backup-manager#/usr/share/backup-manager#g' \
+        -e 's#/var/log/redos-backup#/var/log/backup-manager#g' \
+        "$MIGRATION_DIR/nginx.conf" > "$MIGRATION_DIR/backup-manager.conf"
+    install -m 644 "$MIGRATION_DIR/backup-manager.conf" /etc/nginx/conf.d/backup-manager.conf
+fi
+if [ -f "$MIGRATION_DIR/smb-credentials" ]; then
+    install -m 600 "$MIGRATION_DIR/smb-credentials" /etc/backup-manager/smb-credentials
+fi
+if [ -d "$MIGRATION_DIR/logs" ]; then
+    install -d -m 755 /var/log/backup-manager/legacy-logs
+    cp -a "$MIGRATION_DIR/logs/." /var/log/backup-manager/legacy-logs/
+fi
+rm -rf "$MIGRATION_DIR"
+
+mkdir -p /var/lib/backup-manager /var/run/backup-manager /mnt/backup
+chmod 700 /var/lib/backup-manager
+chmod 755 /var/log/backup-manager /var/run/backup-manager
+
+%posttrans
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl disable --now redos-backup-manager.timer >/dev/null 2>&1 || true
+systemctl disable --now redos-backup-manager.service >/dev/null 2>&1 || true
+rm -f /etc/cron.d/redos-backup-manager
+systemctl enable backup-manager-api.service >/dev/null 2>&1 || true
+systemctl restart backup-manager-api.service >/dev/null 2>&1 || true
+if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+    systemctl enable nginx.service >/dev/null 2>&1 || true
+    systemctl reload nginx.service >/dev/null 2>&1 || systemctl restart nginx.service >/dev/null 2>&1 || true
+fi
+update-desktop-database >/dev/null 2>&1 || true
+
+echo ""
+echo "=========================================="
+echo " ✓ Backup Manager установлен"
+echo "=========================================="
+echo ""
+echo " Для настройки выполните:"
+echo "   sudo /usr/share/backup-manager/scripts/setup.sh"
+echo ""
+echo " Веб-интерфейс: http://localhost:8080"
+echo " Ярлык в меню:  Системные → Резервное копирование"
+echo "=========================================="
+
+%preun
+# Остановка сервисов при полном удалении пакета
+if [ $1 -eq 0 ]; then
+    systemctl stop redos-backup-manager.timer >/dev/null 2>&1 || true
+    systemctl disable redos-backup-manager.timer >/dev/null 2>&1 || true
+    systemctl stop redos-backup-manager.service >/dev/null 2>&1 || true
+    systemctl disable redos-backup-manager.service >/dev/null 2>&1 || true
+    systemctl stop backup-manager-api.service >/dev/null 2>&1 || true
+    systemctl disable backup-manager-api.service >/dev/null 2>&1 || true
+fi
+
+%postun
+# Обновление systemd и desktop database
+systemctl daemon-reload >/dev/null 2>&1 || true
+update-desktop-database >/dev/null 2>&1 || true
+
+# Уведомление при полном удалении
+if [ $1 -eq 0 ]; then
+    echo ""
+    echo "=========================================="
+    echo " Резервное копирование удалено"
+    echo "=========================================="
+    echo ""
+    echo " Конфигурация сохранена в:"
+    echo "   /etc/backup-manager/"
+    echo " Журналы сохранены в:"
+    echo "   /var/log/backup-manager/"
+    echo ""
+    echo " Для полного удаления:"
+    echo "   sudo rm -rf /etc/backup-manager"
+    echo "   sudo rm -rf /var/log/backup-manager"
+    echo "   sudo rm -rf /usr/share/backup-manager"
+    echo "=========================================="
+    echo ""
+fi
+
+%files
+%defattr(-,root,root,-)
+%license %{_licensedir}/%{name}/LICENSE
+
+# Веб-приложение
+%dir /usr/share/backup-manager
+/usr/share/backup-manager/web/*
+/usr/share/backup-manager/server/*
+
+# Скрипты
+/usr/share/backup-manager/scripts/backup.sh
+/usr/share/backup-manager/scripts/backup-all.sh
+/usr/share/backup-manager/scripts/mount-smb.sh
+/usr/share/backup-manager/scripts/setup.sh
+/usr/share/backup-manager/scripts/uninstall.sh
+
+# Иконка
+/usr/share/backup-manager/icons/backup-manager.png
+
+# Конфигурация
+%config(noreplace) /etc/backup-manager/backup.conf
+%config(noreplace) /etc/nginx/conf.d/backup-manager.conf
+
+# Systemd юниты
+/usr/lib/systemd/system/backup-manager-api.service
+
+# Desktop файл (ярлык в меню приложений)
+/usr/share/applications/backup-manager.desktop
+
+# Директории для данных
+%dir /var/log/backup-manager
+/var/log/backup-manager/backup.log
+%ghost /var/run/backup-manager
+
+%changelog
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-1
+- Exclude ThinLinc redirected drives from home-directory backups
+- Bump application and package version to 3.1.1
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.0-1
+- Improve rsync error reporting and exclude transient files
+- Harden home-directory backups against nested mounts and special files
+- Bump application and package version to 3.1.0
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.0.3-1
+- Improve handling of unavailable SMB mounts
+- Bump application and package version to 3.0.3
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.0.2-1
+- Show the application version in the About page
+- Remove the project development notice
+- Bump application and package version to 3.0.2
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.0.1-1
+- Bump application and package version to 3.0.1
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.0.1-1
+- Bump application and package version to 3.0.1
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 2.17.2-2
+- Rename RPM package and installation paths to backup-manager
+- Migrate legacy package configuration, credentials, and logs
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 2.17.2-1
+- Show author attribution in the About page
+- Bump package version to 2.17.2
+
+* Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 2.17.1-1
+- Skip symbolic links and dotfiles during backups
+- Store backups under host and job names
+- Bump package version to 2.17.1
+
+* Wed Jan 15 2026 Backup Manager Team <backup@example.invalid> - 1.0.0-1
+- Первый релиз системы резервного копирования
+- Веб-интерфейс управления на React/TypeScript
+- Интеграция с rsync для инкрементальной синхронизации
+- Подключение к SMB/CIFS серверам через cifs-utils
+- Автоматическое расписание в локальном backend
+- Ручной запуск из веб-интерфейса
+- Мониторинг состояния и журнал операций
+- Ярлык в меню приложений
+- Nginx для обслуживания веб-интерфейса
