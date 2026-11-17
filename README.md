@@ -4,7 +4,6 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Version](https://img.shields.io/badge/version-3.1.1-blue?style=for-the-badge)](package.json)
-[![Content](https://img.shields.io/badge/Content-Shell_Scripts-4EAA25?style=for-the-badge)](https://www.gnu.org/software/bash/)
 ![Purpose](https://img.shields.io/badge/Purpose-Backup_Automation-2E8B57?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 
