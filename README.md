@@ -6,6 +6,7 @@
 [![Version](https://img.shields.io/badge/version-3.1.1-blue?style=for-the-badge)](package.json)
 ![Purpose](https://img.shields.io/badge/Purpose-Backup_Automation-2E8B57?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+[![Support](https://img.shields.io/badge/Support-Boosty-F15F2C?style=for-the-badge&logo=boosty&logoColor=white)](https://boosty.to/backup_manager)
 
 ![banner](assets/backup-manager-banner.jpg)
 
