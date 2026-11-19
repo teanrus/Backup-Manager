@@ -64,7 +64,27 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
           {toggle('Сжатие при передаче (-z)', settings.compression, () => update({ compression: !settings.compression }))}
           {toggle('Удалять лишние файлы в копии (--delete)', settings.deleteExtra, () => update({ deleteExtra: !settings.deleteExtra }))}
           {toggle('Подробный вывод (-v)', settings.verbose, () => update({ verbose: !settings.verbose }))}
+          {toggle('Записывать прямо в файл назначения (--inplace)', settings.inPlace, () => update({ inPlace: !settings.inPlace }))}
+          <p className="text-xs text-amber-700">
+            При включении rsync не создаёт временный файл с точкой в начале имени и не переименовывает его после передачи. Если копирование прервётся, файл в резервной копии может остаться неполным или повреждённым.
+          </p>
           <p className="text-xs text-amber-700">При включении удаления файлы в резервной копии, отсутствующие в исходном каталоге, будут удалены.</p>
+          <div>
+            <label htmlFor="rsync-exclude-patterns" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Маски исключения (по одной на строку)
+            </label>
+            <textarea
+              id="rsync-exclude-patterns"
+              rows={8}
+              value={settings.excludePatterns.join('\n')}
+              onChange={event => update({ excludePatterns: event.target.value.split(/\r?\n/).map(pattern => pattern.trim()) })}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+              aria-describedby="rsync-exclude-help"
+            />
+            <p id="rsync-exclude-help" className="text-xs text-slate-500 mt-1.5">
+              Используются шаблоны rsync. Удалите стандартную строку, чтобы отключить соответствующее исключение, или добавьте свою маску. Файлы блокировки Р-7 Офис `.~lock.*` и `~$*` исключаются по умолчанию.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Ограничение скорости (Мбит/с, 0 — без ограничений)</label>

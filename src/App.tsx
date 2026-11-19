@@ -15,7 +15,8 @@ const emptyState: AppState = {
   logs: [],
   smbConfig: { server: '', share: '', username: '', password: '', domain: 'WORKGROUP', mountPoint: '/mnt/backup', connected: false },
   settings: {
-    compression: true, deleteExtra: false, verbose: false, bandwidthLimit: 0, retries: 3,
+    compression: true, deleteExtra: false, verbose: false, inPlace: false, excludePatterns: [],
+    bandwidthLimit: 0, retries: 3,
     notifyEmail: '', notifyOnError: true, notifyOnSuccess: false, logRetention: 30, parallelJobs: 1,
   },
   backend: { platform: 'unknown', canRunBackups: false },

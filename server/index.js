@@ -9,6 +9,25 @@ const dataDir = path.resolve(process.env.BACKUP_MANAGER_DATA_DIR || path.join(os
 const statePath = path.join(dataDir, 'state.json');
 const apiTokenPath = process.env.BACKUP_MANAGER_API_TOKEN_FILE;
 const maxRequestBytes = 1024 * 1024;
+const defaultExcludePatterns = [
+  '.*',
+  '/thinclient_drives/***',
+  '*.tmp',
+  '*.tmp.*',
+  '*.temp',
+  '*.temp.*',
+  '*.swp',
+  '*.swo',
+  '*.swx',
+  '*.part',
+  '*.partial',
+  '*.crdownload',
+  '*.download',
+  '*~',
+  '~$*',
+  '.~lock.*',
+  '#*#',
+];
 const runningJobs = new Set();
 const scheduledRuns = new Map();
 const pendingJobs = [];
@@ -30,6 +49,8 @@ const defaultState = () => ({
     compression: true,
     deleteExtra: false,
     verbose: false,
+    inPlace: false,
+    excludePatterns: [...defaultExcludePatterns],
     bandwidthLimit: 0,
     retries: 3,
     notifyEmail: '',
@@ -381,27 +402,13 @@ async function executeBackup(jobId) {
       '--no-devices',
       '--no-specials',
       '--one-file-system',
-      '--exclude=.*',
-      '--exclude=/thinclient_drives/***',
-      '--exclude=*.tmp',
-      '--exclude=*.tmp.*',
-      '--exclude=*.temp',
-      '--exclude=*.temp.*',
-      '--exclude=*.swp',
-      '--exclude=*.swo',
-      '--exclude=*.swx',
-      '--exclude=*.part',
-      '--exclude=*.partial',
-      '--exclude=*.crdownload',
-      '--exclude=*.download',
-      '--exclude=*~',
-      '--exclude=~$*',
-      '--exclude=#*#',
       '--stats',
     ];
+    args.push(...settings.excludePatterns.map(pattern => `--exclude=${pattern}`));
     if (settings.compression) args.push('-z');
     if (settings.verbose) args.push('-v');
     if (settings.deleteExtra) args.push('--delete');
+    if (settings.inPlace) args.push('--inplace');
     if (settings.bandwidthLimit > 0) args.push(`--bwlimit=${settings.bandwidthLimit * 1000}`);
     args.push(`${sourcePath}${path.sep}`, `${destination}${path.sep}`);
 
@@ -570,10 +577,22 @@ async function handleRequest(request, response) {
 
     if (request.method === 'PUT' && url.pathname === '/api/settings') {
       const body = await readJson(request);
+      const requestedExcludePatterns = body.excludePatterns === undefined
+        ? defaultExcludePatterns
+        : body.excludePatterns;
+      if (!Array.isArray(requestedExcludePatterns) || requestedExcludePatterns.length > 100 ||
+          requestedExcludePatterns.some(pattern =>
+            typeof pattern !== 'string' || pattern.length > 500 || /[\r\n\0]/.test(pattern))) {
+        const error = new Error('Маски исключения должны быть строками до 500 символов; допускается не более 100 масок.');
+        error.status = 400;
+        throw error;
+      }
       const settings = {
         compression: Boolean(body.compression),
         deleteExtra: Boolean(body.deleteExtra),
         verbose: Boolean(body.verbose),
+        inPlace: Boolean(body.inPlace),
+        excludePatterns: requestedExcludePatterns.map(pattern => pattern.trim()).filter(Boolean),
         bandwidthLimit: Number(body.bandwidthLimit),
         retries: Number(body.retries),
         notifyEmail: typeof body.notifyEmail === 'string' ? body.notifyEmail.trim() : '',

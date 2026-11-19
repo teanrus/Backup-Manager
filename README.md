@@ -3,7 +3,7 @@
 Система резервного копирования каталогов пользователя на удалённый SMB сервер
 
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.1.1-blue?style=for-the-badge)](package.json)
+[![Version](https://img.shields.io/badge/version-3.1.2-blue?style=for-the-badge)](package.json)
 ![Purpose](https://img.shields.io/badge/Purpose-Backup_Automation-2E8B57?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 [![Support](https://img.shields.io/badge/Support-Boosty-F15F2C?style=for-the-badge&logo=boosty&logoColor=white)](https://boosty.to/backup_manager)
@@ -23,6 +23,9 @@
 - **Мониторинг.** Просмотр состояния заданий и журнала событий в веб-интерфейсе.
 - **Ярлык приложения.** Linux-пакеты устанавливают ярлык Backup Manager в меню приложений.
 - **Локальное хранение.** Настройки, задания и журнал сохраняются backend на компьютере, где запущен сервис.
+
+Опция `--inplace` в настройках rsync отключает временные файлы и последующее переименование, но при прерывании передачи файл в резервной копии может остаться неполным.
+Маски исключения настраиваются в разделе «Настройки»: стандартные можно удалить или изменить, а свои — добавить отдельными строками. Файлы блокировок Р-7 Офис `.~lock.*` и `~$*` входят в список по умолчанию.
 
 Задания выполняются последовательно. Каждый набор данных копируется в отдельный каталог внутри настроенной точки монтирования. Удаление файлов назначения, отсутствующих в источнике, выключено по умолчанию.
 

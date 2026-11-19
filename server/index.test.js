@@ -191,9 +191,12 @@ test('backup treats a directory on the root filesystem as an unmounted mountpoin
   assert.ok(rsyncArgs.includes('--no-links'));
   assert.ok(rsyncArgs.includes('--no-devices'));
   assert.ok(rsyncArgs.includes('--no-specials'));
+  assert.ok(!rsyncArgs.includes('--inplace'));
   assert.ok(rsyncArgs.includes('--one-file-system'));
   assert.ok(rsyncArgs.includes('--exclude=.*'));
   assert.ok(rsyncArgs.includes('--exclude=/thinclient_drives/***'));
+  assert.ok(rsyncArgs.includes('--exclude=.~lock.*'));
+  assert.ok(rsyncArgs.includes('--exclude=~$*'));
   for (const pattern of [
     '--exclude=*.tmp',
     '--exclude=*.tmp.*',
@@ -287,6 +290,8 @@ test('backup preserves rsync stderr diagnostics when verbose stdout is large', a
       compression: false,
       deleteExtra: false,
       verbose: true,
+      inPlace: true,
+      excludePatterns: ['custom-backup-ignore-*'],
       bandwidthLimit: 0,
       retries: 1,
       notifyEmail: '',
@@ -324,6 +329,10 @@ test('backup preserves rsync stderr diagnostics when verbose stdout is large', a
   }
 
   assert.equal(state.jobs.find(item => item.id === job.id)?.lastStatus, 'error');
+  const rsyncArgs = (await readFile(path.join(dataDir, 'rsync-args.txt'), 'utf8')).trim().split('\n');
+  assert.ok(rsyncArgs.includes('--inplace'));
+  assert.ok(rsyncArgs.includes('--exclude=custom-backup-ignore-*'));
+  assert.ok(!rsyncArgs.includes('--exclude=.*'));
   const errorLog = state.logs.find(log => log.level === 'error' && log.jobName === job.name);
   assert.match(errorLog.message, /завершился с кодом 23/);
   assert.match(errorLog.message, /Permission denied/);

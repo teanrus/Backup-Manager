@@ -4,6 +4,8 @@ export interface BackupSettings {
   compression: boolean;
   deleteExtra: boolean;
   verbose: boolean;
+  inPlace: boolean;
+  excludePatterns: string[];
   bandwidthLimit: number;
   retries: number;
   notifyEmail: string;

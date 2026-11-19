@@ -1,6 +1,6 @@
 Name:           backup-manager
-Version:        3.1.1
-Release:        3%{?dist}
+Version:        3.1.2
+Release:        1%{?dist}
 Summary:        Backup Manager for SMB/CIFS
 License:        MIT
 URL:            https://github.com/teanrus/backup-manager-t1
@@ -235,6 +235,11 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Thu Nov 19 2026 Backup Manager Team <backup@example.invalid> - 3.1.2-1
+- Add configurable rsync exclusion masks and R-7 Office lock-file exclusions
+- Add optional in-place rsync mode
+- Bump application and package version to 3.1.2
+
 * Tue Nov 17 2026 Backup Manager Team <backup@example.invalid> - 3.1.1-3
 - Allow Nginx to connect to the local API when SELinux is enabled
 - Bump RPM release to 3
@@ -280,7 +285,7 @@ fi
 - Store backups under host and job names
 - Bump package version to 2.17.1
 
-* Wed Jan 15 2026 Backup Manager Team <backup@example.invalid> - 1.0.0-1
+* Thu Jan 15 2026 Backup Manager Team <backup@example.invalid> - 1.0.0-1
 - Первый релиз системы резервного копирования
 - Веб-интерфейс управления на React/TypeScript
 - Интеграция с rsync для инкрементальной синхронизации
