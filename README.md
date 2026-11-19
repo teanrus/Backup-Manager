@@ -68,7 +68,7 @@ make deb
 Пакет появится в `dist/packages/backup-manager_<версия>_all.deb`. Установите его и выполните первоначальную настройку:
 
 ```bash
-sudo apt install "./dist/packages/backup-manager_$ВЕРСИЯ_ПАКЕТА_all.deb"
+sudo apt install "./dist/packages/backup-manager_ВЕРСИЯ_ПАКЕТА_all.deb"
 sudo /usr/share/backup-manager/scripts/setup.sh
 ```
 
