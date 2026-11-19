@@ -63,10 +63,17 @@ React-интерфейс обслуживается Nginx, который пер
 bash ./deb-build/build-deb.sh
 ```
 
-Пакет появится в `dist/packages/backup-manager_<версия>_all.deb`. Установите его и выполните первоначальную настройку:
+Пакет появится в `dist/packages/backup-manager_<версия>_all.deb`.
+
+Выполните установку
 
 ```bash
-sudo apt install "./dist/packages/backup-manager_ВЕРСИЯ_ПАКЕТА_all.deb"
+sudo apt install ./dist/packages/backup-manager_<версия>_all.deb
+```
+
+Выполните первоначальную настройку:
+
+```bash
 sudo /usr/share/backup-manager/scripts/setup.sh
 ```
 
