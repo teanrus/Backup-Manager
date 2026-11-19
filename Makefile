@@ -21,7 +21,7 @@ install: build
 	sudo mkdir -p /usr/share/$(PKG_NAME)/web
 	sudo mkdir -p /usr/share/$(PKG_NAME)/scripts
 	sudo mkdir -p /usr/share/$(PKG_NAME)/server
-	sudo mkdir -p /usr/share/$(PKG_NAME)/icons
+	sudo install -d -m 755 /usr/share/icons/hicolor/scalable/apps
 	sudo mkdir -p /etc/$(PKG_NAME)
 	sudo mkdir -p /var/log/$(PKG_NAME)
 	
@@ -36,6 +36,8 @@ install: build
 	sudo install -m 644 rpm-build/SOURCES/backup-manager.conf /etc/nginx/conf.d/
 	sudo install -m 644 rpm-build/SOURCES/backup-manager-api.service /usr/lib/systemd/system/
 	sudo install -m 644 rpm-build/SOURCES/backup-manager.desktop /usr/share/applications/
+	sudo install -m 644 assets/backup-manager.svg /usr/share/icons/hicolor/scalable/apps/backup-manager.svg
+	sudo update-desktop-database >/dev/null 2>&1 || true
 	sudo install -d -m 700 /var/lib/backup-manager
 	sudo systemctl daemon-reload
 	sudo systemctl enable --now backup-manager-api.service

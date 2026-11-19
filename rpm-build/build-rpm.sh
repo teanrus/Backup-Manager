@@ -98,16 +98,8 @@ mkdir -p ~/rpmbuild/SOURCES/server
 cp "$PROJECT_DIR/server/index.js" ~/rpmbuild/SOURCES/server/
 cp "$PROJECT_DIR/server/package.json" ~/rpmbuild/SOURCES/server/
 
-# Копирование иконки
-if [ -f "$PROJECT_DIR/public/icon.png" ]; then
-    cp "$PROJECT_DIR/public/icon.png" ~/rpmbuild/SOURCES/$PKG_NAME.png
-    echo "  ✓ Иконка найдена и скопирована"
-else
-    echo "  ⚠ Иконка не найдена в public/icon.png"
-    echo "  Создаём иконку-заглушку..."
-    # Создаём минимальный PNG (1x1 прозрачный пиксель)
-    printf '\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x0a\x49\x44\x41\x54\x78\x9c\x63\x00\x01\x00\x00\x05\x00\x01\x0d\x0a\x2d\xb4\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82' > ~/rpmbuild/SOURCES/$PKG_NAME.png
-fi
+cp "$PROJECT_DIR/assets/backup-manager.svg" ~/rpmbuild/SOURCES/$PKG_NAME.svg
+echo "  ✓ Иконка найдена и скопирована"
 
 echo "✓ Структура rpmbuild подготовлена"
 echo ""
@@ -120,7 +112,7 @@ cd ~/rpmbuild
 
 # Проверка что все файлы на месте
 MISSING=0
-for f in backup.sh backup-all.sh mount-smb.sh setup.sh backup.conf backup-manager.conf backup-manager.desktop backup-manager-api.service backup-manager.png LICENSE; do
+for f in backup.sh backup-all.sh mount-smb.sh setup.sh backup.conf backup-manager.conf backup-manager.desktop backup-manager-api.service backup-manager.svg LICENSE; do
     if [ ! -f "SOURCES/$f" ]; then
         echo "  ⚠ Отсутствует: SOURCES/$f"
         MISSING=$((MISSING + 1))

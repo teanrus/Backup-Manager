@@ -45,7 +45,7 @@ BuildRequires:  systemd
 mkdir -p %{buildroot}/usr/share/backup-manager/web
 mkdir -p %{buildroot}/usr/share/backup-manager/scripts
 mkdir -p %{buildroot}/usr/share/backup-manager/server
-mkdir -p %{buildroot}/usr/share/backup-manager/icons
+mkdir -p %{buildroot}/usr/share/icons/hicolor/scalable/apps
 mkdir -p %{buildroot}/etc/backup-manager
 mkdir -p %{buildroot}/etc/nginx/conf.d
 mkdir -p %{buildroot}/usr/lib/systemd/system
@@ -84,7 +84,7 @@ install -m 644 %{_sourcedir}/LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 # ==========================================
 # Установка иконки и desktop файла
 # ==========================================
-install -m 644 %{_sourcedir}/backup-manager.png %{buildroot}/usr/share/backup-manager/icons/backup-manager.png
+install -m 644 %{_sourcedir}/backup-manager.svg %{buildroot}/usr/share/icons/hicolor/scalable/apps/backup-manager.svg
 install -m 644 %{_sourcedir}/backup-manager.desktop %{buildroot}/usr/share/applications/backup-manager.desktop
 
 # ==========================================
@@ -216,8 +216,8 @@ fi
 /usr/share/backup-manager/scripts/setup.sh
 /usr/share/backup-manager/scripts/uninstall.sh
 
-# Иконка
-/usr/share/backup-manager/icons/backup-manager.png
+# Иконка приложения
+/usr/share/icons/hicolor/scalable/apps/backup-manager.svg
 
 # Конфигурация
 %config(noreplace) /etc/backup-manager/backup.conf

@@ -21,6 +21,15 @@ export const AboutPage: React.FC = () => (
             Автор: Руслан Тян (
             <a className="text-blue-600 hover:underline" href="mailto:teanrus@yandex.ru">teanrus@yandex.ru</a>)
           </p>
+          <a
+            className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+            href="https://boosty.to/backup_manager/donate"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i className="fa-solid fa-mug-hot" aria-hidden="true"></i>
+            Автору на кофе с печенькой
+          </a>
           <div className="flex flex-wrap gap-2 mt-3">
             <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">React + Node.js</span>
             <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-full font-medium">Локальный backend</span>

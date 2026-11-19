@@ -32,6 +32,8 @@ mkdir -p \
     "$PACKAGE_ROOT/usr/share/backup-manager/web" \
     "$PACKAGE_ROOT/usr/share/backup-manager/server" \
     "$PACKAGE_ROOT/usr/share/backup-manager/scripts" \
+    "$PACKAGE_ROOT/usr/share/applications" \
+    "$PACKAGE_ROOT/usr/share/icons/hicolor/scalable/apps" \
     "$PACKAGE_ROOT/usr/share/doc/$PACKAGE_NAME" \
     "$PACKAGE_ROOT/etc/nginx/conf.d" \
     "$PACKAGE_ROOT/usr/lib/systemd/system" \
@@ -41,6 +43,8 @@ mkdir -p \
 cp -a "$PROJECT_DIR/dist/." "$PACKAGE_ROOT/usr/share/backup-manager/web/"
 install -m 644 "$PROJECT_DIR/server/index.js" "$PACKAGE_ROOT/usr/share/backup-manager/server/index.js"
 install -m 644 "$PROJECT_DIR/server/package.json" "$PACKAGE_ROOT/usr/share/backup-manager/server/package.json"
+install -m 644 "$SCRIPT_DIR/../rpm-build/SOURCES/backup-manager.desktop" "$PACKAGE_ROOT/usr/share/applications/backup-manager.desktop"
+install -m 644 "$PROJECT_DIR/assets/backup-manager.svg" "$PACKAGE_ROOT/usr/share/icons/hicolor/scalable/apps/backup-manager.svg"
 install -m 644 "$PROJECT_DIR/LICENSE" "$PACKAGE_ROOT/usr/share/doc/$PACKAGE_NAME/copyright"
 install -m 755 "$SCRIPT_DIR/setup.sh" "$PACKAGE_ROOT/usr/share/backup-manager/scripts/setup.sh"
 install -m 644 "$SCRIPT_DIR/backup-manager-api.service" "$PACKAGE_ROOT/usr/lib/systemd/system/backup-manager-api.service"
