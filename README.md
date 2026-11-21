@@ -127,4 +127,6 @@ bash ./rpm-build/build-rpm.sh
 
 ![О программе](<assets/Backup-Manager-008.png>)
 
+![donate](assets/backup_manager-donate.png)
+
 [Автору на кофе с печенькой](https://boosty.to/backup_manager/donate)
