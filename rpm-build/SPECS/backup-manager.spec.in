@@ -17,8 +17,6 @@ Requires:       openssl
 Requires:       systemd
 Requires:       policycoreutils
 
-BuildRequires:  systemd
-
 %description
 Приложение для локального управления резервным копированием каталогов
 на SMB/CIFS сервер с помощью rsync.
