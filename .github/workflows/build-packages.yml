@@ -1,0 +1,60 @@
+name: Build and publish Linux packages
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-dist-packages
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install package builders
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes dpkg-dev rpm
+          command -v dpkg-deb
+          command -v rpmbuild
+
+      - name: Build Debian package
+        run: bash ./deb-build/build-deb.sh
+
+      - name: Build RPM package
+        run: |
+          bash ./rpm-build/build-rpm.sh
+          cp "$HOME"/rpmbuild/RPMS/noarch/backup-manager-*.rpm dist/packages/
+
+      - name: Create or update dist release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view dist --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create dist \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Backup Manager distribution packages" \
+              --notes "Automated Debian and RPM packages built from the main branch or a published release."
+          fi
+
+          gh release upload dist dist/packages/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
