@@ -35,13 +35,14 @@ jobs:
           command -v dpkg-deb
           command -v rpmbuild
 
+      - name: Build RPM package
+        run: bash ./rpm-build/build-rpm.sh
+
       - name: Build Debian package
         run: bash ./deb-build/build-deb.sh
 
-      - name: Build RPM package
-        run: |
-          bash ./rpm-build/build-rpm.sh
-          cp "$HOME"/rpmbuild/RPMS/noarch/backup-manager-*.rpm dist/packages/
+      - name: Collect RPM package
+        run: cp "$HOME"/rpmbuild/RPMS/noarch/backup-manager-*.rpm dist/packages/
 
       - name: Create or update dist release
         env:
