@@ -47,7 +47,7 @@ Debian-пакет устанавливает:
 - сценарий первоначальной настройки;
 - сценарии `postinst`, `prerm` и `postrm` для обслуживания пакета.
 
-Имя пакета — `backup-manager`, архитектура — `all`. Версия пакета берётся из поля `version` в корневом `package.json`. Пакет не содержит Node.js runtime: он устанавливается как системная зависимость.
+Имя пакета — `backup-manager`, архитектура — `all`. Версия пакета формируется из поля `version` в корневом `package.json` и номера Debian-выпуска в `build-deb.sh`. Пакет не содержит Node.js runtime: он устанавливается как системная зависимость.
 
 Данные приложений расположены вне каталога файлов пакета. При удалении пакета каталог `/var/lib/backup-manager` сохраняется, чтобы пользователь мог переустановить программу без потери конфигурации и заданий.
 
@@ -109,13 +109,13 @@ dpkg-deb --version
 dist/packages/backup-manager_<версия>_all.deb
 ```
 
-Например, при версии `3.2.2`:
+Например, для версии приложения `3.2.2` и Debian-выпуска `2`:
 
 ```text
-dist/packages/backup-manager_3.2.2_all.deb
+dist/packages/backup-manager_3.2.2-2_all.deb
 ```
 
-Версию задаёт поле `version` в корневом `package.json`; при её изменении сценарий подставляет значение в Debian-метаданные автоматически.
+Версия приложения берётся из поля `version` в корневом `package.json`, а номер выпуска пакета — из `DEB_REVISION` в `build-deb.sh`.
 
 ### Ручная сборка frontend
 
@@ -136,23 +136,23 @@ bash ./deb-build/build-deb.sh
 Просмотрите metadata:
 
 ```bash
-dpkg-deb --info dist/packages/backup-manager_3.2.2_all.deb
+dpkg-deb --info dist/packages/backup-manager_3.2.2-2_all.deb
 ```
 
 Посмотрите список файлов:
 
 ```bash
-dpkg-deb --contents dist/packages/backup-manager_3.2.2_all.deb
+dpkg-deb --contents dist/packages/backup-manager_3.2.2-2_all.deb
 ```
 
-Вместо `3.2.2` укажите версию, которая находится в имени созданного файла. Перед распространением пакета проверьте его установку и удаление на чистой тестовой системе Debian/Ubuntu с systemd и Nginx.
+Укажите имя и версию фактически созданного файла. Перед распространением пакета проверьте его установку и удаление на чистой тестовой системе Debian/Ubuntu с systemd и Nginx.
 
 ## Установка и первоначальная настройка
 
 Устанавливайте пакет на целевой Linux-компьютер с помощью `apt`. Из корня репозитория команда может выглядеть так:
 
 ```bash
-sudo apt install ./dist/packages/backup-manager_3.2.2_all.deb
+sudo apt install ./dist/packages/backup-manager_3.2.2-2_all.deb
 ```
 
 Если устанавливаете пакет из другого каталога, укажите фактический путь к `.deb`. `apt` установит заявленные системные зависимости.

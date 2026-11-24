@@ -1,6 +1,6 @@
 Name:           backup-manager
 Version:        @APP_VERSION@
-Release:        1%{?dist}
+Release:        @PKG_RELEASE@%{?dist}
 Summary:        Backup Manager for SMB/CIFS
 License:        MIT
 URL:            https://github.com/teanrus/backup-manager-t1
@@ -235,6 +235,10 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.2-2
+- Skip incomplete archives when files change during archive creation while preserving prior archives
+- Set package release to 2 for the 3.2.2 application version
+
 * Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.2-1
 - Add an in-app directory browser for selecting synchronization sources
 - Start browsing at /home and support navigating the Linux filesystem

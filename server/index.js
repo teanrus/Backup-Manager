@@ -404,6 +404,14 @@ async function runBackup(jobId, dryRun = false) {
   void drainQueue();
 }
 
+function isTarChangedFileWarning(error) {
+  if (!(error instanceof Error)) return false;
+  const diagnostic = error.message.match(/^tar завершился с кодом 1:\n([\s\S]+)$/)?.[1];
+  if (!diagnostic) return false;
+  const lines = diagnostic.split(/\r?\n/);
+  return lines.length > 0 && lines.every(line => /^tar: .+: file changed as we read it$/.test(line));
+}
+
 async function createArchive(destination, archiveDirectory, archivePrefix, retention, jobId) {
   await mkdir(archiveDirectory, { recursive: true });
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -418,12 +426,14 @@ async function createArchive(destination, archiveDirectory, archivePrefix, reten
     } catch (cleanupError) {
       if (cleanupError.code !== 'ENOENT') throw cleanupError;
     }
+    if (isTarChangedFileWarning(error)) return { skipped: true };
     throw error;
   }
   const archives = (await readdir(archiveDirectory, { withFileTypes: true }))
     .filter(entry => entry.isFile() && entry.name.startsWith(`${archivePrefix}-`) && entry.name.endsWith('.tar.gz'))
     .sort((left, right) => right.name.localeCompare(left.name));
   await Promise.all(archives.slice(retention).map(entry => unlink(path.join(archiveDirectory, entry.name))));
+  return { skipped: false };
 }
 
 async function executeBackup({ jobId, dryRun, previousStatus }) {
@@ -499,18 +509,24 @@ async function executeBackup({ jobId, dryRun, previousStatus }) {
       const bytes = Number(totalBytes);
       job.size = bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} ГБ` : `${(bytes / 1024 ** 2).toFixed(1)} МБ`;
     }
+    let archiveSkipped = false;
     if (settings.createArchive) {
       job.progressMessage = 'Создание архива…';
       const archiveRoot = path.join(mountPoint, safeDirectoryName(os.hostname()), 'archives');
       const archivePrefix = safeDirectoryName(job.name);
-      await createArchive(path.join(mountPoint, safeDirectoryName(os.hostname()), safeDirectoryName(job.name)),
+      const archiveResult = await createArchive(path.join(mountPoint, safeDirectoryName(os.hostname()), safeDirectoryName(job.name)),
         archiveRoot, archivePrefix, settings.archiveRetention, jobId);
+      archiveSkipped = archiveResult.skipped;
     }
     job.lastStatus = 'success';
     job.lastRun = new Date().toLocaleString('ru-RU', { hour12: false });
     await saveState();
     const stats = result?.match(/Number of files:.*|Total file size:.*|sent .* bytes.*received .*/g)?.join(' · ');
-    await addLog('success', `Синхронизация завершена.${settings.createArchive ? ' Архив создан.' : ''}${stats ? ` ${stats}` : ''}`, job.name);
+    if (archiveSkipped) {
+      await addLog('warning', `Синхронизация завершена, но архив не создан: файлы изменялись во время архивирования. Предыдущие архивы сохранены.${stats ? ` ${stats}` : ''}`, job.name);
+    } else {
+      await addLog('success', `Синхронизация завершена.${settings.createArchive ? ' Архив создан.' : ''}${stats ? ` ${stats}` : ''}`, job.name);
+    }
   } catch (error) {
     cancelled = cancelledJobs.has(jobId);
     if (cancelled) {

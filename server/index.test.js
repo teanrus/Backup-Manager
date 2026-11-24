@@ -43,7 +43,7 @@ before(async () => {
   );
   await writeFile(
     path.join(mockBinDir, 'tar'),
-    '#!/bin/sh\nwhile [ "$#" -gt 0 ]; do\n  if [ "$1" = "-czf" ]; then shift; : > "$1"; exit 0; fi\n  shift\ndone\nexit 0\n',
+    '#!/bin/sh\nwhile [ "$#" -gt 0 ]; do\n  if [ "$1" = "-czf" ]; then\n    shift\n    : > "$1"\n    if [ -f "$TAR_CHANGED_FLAG" ]; then printf \'tar: ./active.txt: file changed as we read it\\n\' >&2; exit 1; fi\n    exit 0\n  fi\n  shift\ndone\nexit 0\n',
     { mode: 0o755 },
   );
   await chmod(mockBinDir, 0o755);
@@ -64,6 +64,7 @@ before(async () => {
       RSYNC_ARGS_LOG: path.join(dataDir, 'rsync-args.txt'),
       RSYNC_ERROR_FLAG: path.join(dataDir, 'rsync-error'),
       RSYNC_WAIT_FLAG: path.join(dataDir, 'rsync-wait'),
+      TAR_CHANGED_FLAG: path.join(dataDir, 'tar-changed'),
       MOCK_STALE_MOUNTPOINT: staleMountPoint,
       PATH: `${mockBinDir}:${process.env.PATH || ''}`,
     },
@@ -470,6 +471,28 @@ test('archives are created after synchronization and retention keeps the newest 
   const archiveDirectory = path.join(mountPoint, os.hostname(), 'archives');
   const archives = (await readdir(archiveDirectory)).filter(name => name.endsWith('.tar.gz'));
   assert.equal(archives.length, 1);
+  const previousArchive = archives[0];
+  await writeFile(path.join(dataDir, 'tar-changed'), '');
+  try {
+    assert.equal((await apiRequest(`${baseUrl}/api/jobs/${job.id}/run`, { method: 'POST' })).status, 202);
+    let completedWithWarning = false;
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const state = await (await apiRequest(`${baseUrl}/api/state`)).json();
+      const warning = state.logs.find(log => log.jobName === job.name && log.message.includes('архив не создан'));
+      if (warning) {
+        completedWithWarning = warning.level === 'warning' &&
+          state.jobs.find(item => item.id === job.id)?.lastStatus === 'success';
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    assert.ok(completedWithWarning, 'Sync should succeed while reporting the unstable archive.');
+    const remaining = await readdir(archiveDirectory);
+    assert.deepEqual(remaining.filter(name => name.endsWith('.tar.gz')), [previousArchive]);
+    assert.ok(!remaining.some(name => name.endsWith('.tmp')));
+  } finally {
+    await rm(path.join(dataDir, 'tar-changed'), { force: true });
+  }
 });
 
 test('backup preserves rsync stderr diagnostics when verbose stdout is large', async () => {

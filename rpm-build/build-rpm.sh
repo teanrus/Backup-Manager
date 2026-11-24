@@ -19,7 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PKG_NAME="backup-manager"
-PKG_RELEASE="1"
+PKG_RELEASE="2"
 
 # ==========================================
 # [1/7] Проверка зависимостей для сборки
@@ -75,8 +75,9 @@ echo "[4/7] Подготовка структуры rpmbuild..."
 # Создание директорий rpmbuild
 mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-# Формирование spec с версией из package.json
-sed "s/@APP_VERSION@/$PKG_VERSION/g" \
+# Формирование spec с версией приложения и выпуском пакета
+sed -e "s/@APP_VERSION@/$PKG_VERSION/g" \
+    -e "s/@PKG_RELEASE@/$PKG_RELEASE/g" \
     "$SCRIPT_DIR/SPECS/$PKG_NAME.spec.in" > "$HOME/rpmbuild/SPECS/$PKG_NAME.spec"
 
 # Копирование исходных файлов (скрипты, конфиги)

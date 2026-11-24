@@ -20,7 +20,9 @@ for command in node npm dpkg-deb; do
 done
 
 cd "$PROJECT_DIR"
-VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
+APP_VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
+DEB_REVISION="2"
+VERSION="${APP_VERSION}-${DEB_REVISION}"
 OUTPUT_DIR="$PROJECT_DIR/dist/packages"
 OUTPUT_FILE="$OUTPUT_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
 
