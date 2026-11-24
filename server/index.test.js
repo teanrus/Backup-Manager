@@ -481,6 +481,7 @@ test('archives are created after synchronization and retention keeps the newest 
       const warning = state.logs.find(log => log.jobName === job.name && log.message.includes('архив не создан'));
       if (warning) {
         completedWithWarning = warning.level === 'warning' &&
+          warning.message.includes('./active.txt') &&
           state.jobs.find(item => item.id === job.id)?.lastStatus === 'success';
         break;
       }

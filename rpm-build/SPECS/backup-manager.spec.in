@@ -235,6 +235,10 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.2-3
+- Include paths of files that changed while tar was creating an archive
+- Explain that archive format changes do not provide a consistent filesystem snapshot
+
 * Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.2-2
 - Skip incomplete archives when files change during archive creation while preserving prior archives
 - Set package release to 2 for the 3.2.2 application version

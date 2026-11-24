@@ -85,7 +85,7 @@ bash ./rpm-build/build-rpm.sh
 Готовый RPM ожидается по пути:
 
 ```text
-~/rpmbuild/RPMS/noarch/backup-manager-3.2.2-2.<суффикс>.noarch.rpm
+~/rpmbuild/RPMS/noarch/backup-manager-3.2.2-3.<суффикс>.noarch.rpm
 ```
 
 Фактическое имя файла может включать дополнительный суффикс дистрибутива. Посмотреть созданные пакеты можно так:
@@ -109,7 +109,7 @@ make rpm
 Установите собранный пакет с помощью пакетного менеджера целевого RPM-дистрибутива. Например, если пакет найден в `~/rpmbuild/RPMS/noarch/`:
 
 ```bash
-sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.2.2-2*.rpm
+sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.2.2-3*.rpm
 ```
 
 Во время установки RPM пытается настроить systemd и запустить Nginx и API. Однако полноценный доступ к приложению появляется только после создания токена и файла авторизации — это делает следующий сценарий.

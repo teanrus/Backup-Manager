@@ -21,7 +21,7 @@ done
 
 cd "$PROJECT_DIR"
 APP_VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
-DEB_REVISION="2"
+DEB_REVISION="3"
 VERSION="${APP_VERSION}-${DEB_REVISION}"
 OUTPUT_DIR="$PROJECT_DIR/dist/packages"
 OUTPUT_FILE="$OUTPUT_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
