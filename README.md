@@ -115,19 +115,19 @@ bash ./rpm-build/build-rpm.sh
 
 ## Скриншоты
 
-![Обзор](<assets/Backup-Manager-002.png>)
+![Обзор](<assets/Backup-Manager-001.png>)
 
-![Задания](<assets/Backup-Manager-001.png>)
+![Задания](<assets/Backup-Manager-002.png>)
 
-![Расписания](<assets/Backup-Manager-004.png>)
+![Расписания](<assets/Backup-Manager-003.png>)
 
-![SMB сервер](<assets/Backup-Manager-005.png>)
+![SMB сервер](<assets/Backup-Manager-004.png>)
+
+![Настройки](<assets/Backup-Manager-005.png>)
 
 ![Настройки](<assets/Backup-Manager-006.png>)
 
-![Настройки](<assets/Backup-Manager-007.png>)
-
-![О программе](<assets/Backup-Manager-008.png>)
+![О программе](<assets/Backup-Manager-007.png>)
 
 ![donate](assets/backup_manager-donate.png)
 
