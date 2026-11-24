@@ -109,10 +109,10 @@ dpkg-deb --version
 dist/packages/backup-manager_<версия>_all.deb
 ```
 
-Например, при версии `3.1.2`:
+Например, при версии `3.2.2`:
 
 ```text
-dist/packages/backup-manager_3.1.2_all.deb
+dist/packages/backup-manager_3.2.2_all.deb
 ```
 
 Версию задаёт поле `version` в корневом `package.json`; при её изменении сценарий подставляет значение в Debian-метаданные автоматически.
@@ -136,23 +136,23 @@ bash ./deb-build/build-deb.sh
 Просмотрите metadata:
 
 ```bash
-dpkg-deb --info dist/packages/backup-manager_3.1.2_all.deb
+dpkg-deb --info dist/packages/backup-manager_3.2.2_all.deb
 ```
 
 Посмотрите список файлов:
 
 ```bash
-dpkg-deb --contents dist/packages/backup-manager_3.1.2_all.deb
+dpkg-deb --contents dist/packages/backup-manager_3.2.2_all.deb
 ```
 
-Вместо `3.1.2` укажите версию, которая находится в имени созданного файла. Перед распространением пакета проверьте его установку и удаление на чистой тестовой системе Debian/Ubuntu с systemd и Nginx.
+Вместо `3.2.2` укажите версию, которая находится в имени созданного файла. Перед распространением пакета проверьте его установку и удаление на чистой тестовой системе Debian/Ubuntu с systemd и Nginx.
 
 ## Установка и первоначальная настройка
 
 Устанавливайте пакет на целевой Linux-компьютер с помощью `apt`. Из корня репозитория команда может выглядеть так:
 
 ```bash
-sudo apt install ./dist/packages/backup-manager_3.1.2_all.deb
+sudo apt install ./dist/packages/backup-manager_3.2.2_all.deb
 ```
 
 Если устанавливаете пакет из другого каталога, укажите фактический путь к `.deb`. `apt` установит заявленные системные зависимости.

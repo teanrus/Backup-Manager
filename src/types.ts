@@ -15,10 +15,12 @@ export interface BackupJob {
   sourcePath: string;
   enabled: boolean;
   lastRun: string | null;
-  lastStatus: 'success' | 'error' | 'running' | 'never';
+  lastStatus: 'success' | 'error' | 'running' | 'cancelled' | 'never';
   schedule: ScheduleConfig;
   size: string;
   filesCount: number;
+  progress?: number | null;
+  progressMessage?: string;
 }
 
 export interface ScheduleConfig {
@@ -36,4 +38,4 @@ export interface LogEntry {
   jobName?: string;
 }
 
-export type Page = 'dashboard' | 'jobs' | 'smb' | 'schedule' | 'logs' | 'settings' | 'about';
+export type Page = 'dashboard' | 'jobs' | 'recovery' | 'smb' | 'schedule' | 'logs' | 'settings' | 'about';

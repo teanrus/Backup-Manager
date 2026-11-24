@@ -19,14 +19,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PKG_NAME="backup-manager"
-PKG_VERSION="3.1.2"
 PKG_RELEASE="1"
-
-echo "=========================================="
-echo " Сборка RPM пакета: $PKG_NAME"
-echo " Версия: $PKG_VERSION-$PKG_RELEASE"
-echo "=========================================="
-echo ""
 
 # ==========================================
 # [1/7] Проверка зависимостей для сборки
@@ -46,6 +39,15 @@ for cmd in node npm rpmbuild; do
         exit 1
     fi
 done
+
+cd "$PROJECT_DIR"
+PKG_VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
+echo "=========================================="
+echo " Сборка RPM пакета: $PKG_NAME"
+echo " Версия: $PKG_VERSION-$PKG_RELEASE"
+echo "=========================================="
+echo ""
+
 echo "✓ Все зависимости для сборки найдены"
 echo ""
 
@@ -53,8 +55,7 @@ echo ""
 # [2/7] Установка npm зависимостей
 # ==========================================
 echo "[2/7] Установка npm зависимостей..."
-cd "$PROJECT_DIR"
-npm install
+npm ci
 echo "✓ npm зависимости установлены"
 echo ""
 
@@ -74,8 +75,9 @@ echo "[4/7] Подготовка структуры rpmbuild..."
 # Создание директорий rpmbuild
 mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-# Копирование spec файла
-cp "$SCRIPT_DIR/SPECS/$PKG_NAME.spec" ~/rpmbuild/SPECS/
+# Формирование spec с версией из package.json
+sed "s/@APP_VERSION@/$PKG_VERSION/g" \
+    "$SCRIPT_DIR/SPECS/$PKG_NAME.spec.in" > "$HOME/rpmbuild/SPECS/$PKG_NAME.spec"
 
 # Копирование исходных файлов (скрипты, конфиги)
 cp "$SCRIPT_DIR/SOURCES/backup.sh" ~/rpmbuild/SOURCES/

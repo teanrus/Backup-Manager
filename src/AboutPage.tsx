@@ -5,7 +5,7 @@ export const AboutPage: React.FC = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-2xl font-bold text-slate-800">О программе</h2>
-      <p className="text-slate-500 text-sm mt-1">Локальное управление резервными копиями</p>
+      <p className="text-slate-500 text-sm mt-1">Локальное управление синхронизацией и восстановлением данных</p>
     </div>
 
     <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -15,7 +15,7 @@ export const AboutPage: React.FC = () => (
         </div>
         <div>
           <h3 className="text-xl font-bold text-slate-800">Backup Manager</h3>
-          <p className="text-slate-500 mt-1">Управление заданиями резервного копирования каталогов на SMB/CIFS.</p>
+          <p className="text-slate-500 mt-1">Управление синхронизацией локальных каталогов с SMB/CIFS и восстановлением данных.</p>
           <p className="text-sm text-slate-500 mt-2">Версия: {packageJson.version}</p>
           <p className="text-sm text-slate-500 mt-2">
             Автор: Руслан Тян (
@@ -43,7 +43,9 @@ export const AboutPage: React.FC = () => (
       <h3 className="font-semibold text-slate-800 mb-4">Что умеет приложение</h3>
       <ul className="space-y-3 text-sm text-slate-600">
         <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Хранить задания, SMB-параметры и настройки локально.</li>
-        <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Проверять доступ к SMB-ресурсу и запускать резервное копирование.</li>
+        <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Проверять доступ к SMB-ресурсу и запускать синхронизацию.</li>
+        <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Создавать архивы, просматривать хранилище и скачивать или восстанавливать данные.</li>
+        <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Проверять планируемые изменения rsync в режиме dry-run.</li>
         <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Выполнять ежедневное, еженедельное и почасовое расписание.</li>
         <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Показывать состояние заданий и журнал событий.</li>
       </ul>

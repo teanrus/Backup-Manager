@@ -8,6 +8,7 @@ import { SchedulePage } from './SchedulePage';
 import { LogsPage } from './LogsPage';
 import { SettingsPage } from './SettingsPage';
 import { AboutPage } from './AboutPage';
+import { RecoveryPage } from './RecoveryPage';
 import { api, AppState, BackupSettings } from './api';
 
 const emptyState: AppState = {
@@ -15,7 +16,8 @@ const emptyState: AppState = {
   logs: [],
   smbConfig: { server: '', share: '', username: '', password: '', domain: 'WORKGROUP', mountPoint: '/mnt/backup', connected: false },
   settings: {
-    compression: true, deleteExtra: false, verbose: false, inPlace: false, excludePatterns: [],
+    compression: true, deleteExtra: false, verbose: false, inPlace: false, deleteDelay: false,
+    createArchive: false, archiveRetention: 1, excludePatterns: [],
     bandwidthLimit: 0, retries: 3,
     notifyEmail: '', notifyOnError: true, notifyOnSuccess: false, logRetention: 30, parallelJobs: 1,
   },
@@ -62,6 +64,14 @@ function App() {
     void perform(() => api.runJob(id));
   }, [perform]);
 
+  const handleDryRunJob = useCallback((id: string) => {
+    void perform(() => api.dryRunJob(id));
+  }, [perform]);
+
+  const handleStopJob = useCallback((id: string) => {
+    void perform(() => api.stopJob(id));
+  }, [perform]);
+
   const handleToggleJob = useCallback((id: string) => {
     const job = appState.jobs.find(item => item.id === id);
     if (job) void perform(() => api.updateJob(id, { enabled: !job.enabled }));
@@ -69,6 +79,10 @@ function App() {
 
   const handleAddJob = useCallback((job: Omit<BackupJob, 'id' | 'lastRun' | 'lastStatus' | 'size' | 'filesCount'>) => {
     void perform(() => api.addJob(job));
+  }, [perform]);
+
+  const handleUpdateJob = useCallback((id: string, job: Pick<BackupJob, 'name' | 'sourcePath' | 'schedule'>) => {
+    void perform(() => api.updateJob(id, job));
   }, [perform]);
 
   const handleDeleteJob = useCallback((id: string) => {
@@ -94,7 +108,9 @@ function App() {
       case 'dashboard':
         return <Dashboard jobs={appState.jobs} logs={appState.logs} smbConfig={appState.smbConfig} onRunJob={handleRunJob} canRunBackups={appState.backend.canRunBackups} />;
       case 'jobs':
-        return <JobsPage jobs={appState.jobs} onToggleJob={handleToggleJob} onRunJob={handleRunJob} onAddJob={handleAddJob} onDeleteJob={handleDeleteJob} canRunBackups={appState.backend.canRunBackups} />;
+        return <JobsPage jobs={appState.jobs} onToggleJob={handleToggleJob} onRunJob={handleRunJob} onDryRunJob={handleDryRunJob} onStopJob={handleStopJob} onAddJob={handleAddJob} onUpdateJob={handleUpdateJob} onDeleteJob={handleDeleteJob} canRunBackups={appState.backend.canRunBackups} />;
+      case 'recovery':
+        return <RecoveryPage />;
       case 'smb':
         return <SMBPage config={appState.smbConfig} onSave={handleSaveSMB} onTest={handleTestSMB} />;
       case 'schedule':

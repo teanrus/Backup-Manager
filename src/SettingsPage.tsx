@@ -32,16 +32,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
     }
   };
 
-  const toggle = (label: string, enabled: boolean, onClick: () => void) => (
+  const toggle = (label: string, enabled: boolean, onClick: () => void, description?: string, disabled = false) => (
     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-      <p className="text-sm font-medium text-slate-700">{label}</p>
+      <div>
+        <p className="text-sm font-medium text-slate-700">{label}</p>
+        {description && <p className="text-xs text-slate-500 mt-1">{description}</p>}
+      </div>
       <button
         type="button"
         role="switch"
         aria-checked={enabled}
         aria-label={label}
         onClick={onClick}
-        className={`w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+        disabled={disabled}
+        className={`w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-blue-600' : 'bg-slate-300'} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
       </button>
@@ -52,7 +56,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Настройки</h2>
-        <p className="text-slate-500 text-sm mt-1">Параметры резервного копирования и журналирования</p>
+        <p className="text-slate-500 text-sm mt-1">Параметры синхронизации, архивирования и журналирования</p>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -62,13 +66,46 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
         </h3>
         <div className="space-y-4">
           {toggle('Сжатие при передаче (-z)', settings.compression, () => update({ compression: !settings.compression }))}
-          {toggle('Удалять лишние файлы в копии (--delete)', settings.deleteExtra, () => update({ deleteExtra: !settings.deleteExtra }))}
+          {toggle(
+            'Удалять лишние файлы в копии (--delete)',
+            settings.deleteExtra,
+            () => update({ deleteExtra: !settings.deleteExtra, ...(settings.deleteExtra ? { deleteDelay: false } : {}) }),
+            'Файлы в копии, отсутствующие в источнике, будут удалены.',
+          )}
+          {toggle(
+            'Отложить удаление (--delete-delay)',
+            settings.deleteDelay,
+            () => update({ deleteDelay: !settings.deleteDelay }),
+            'Удаление включённых выше лишних файлов выполняется после передачи, а не в процессе синхронизации.',
+            !settings.deleteExtra,
+          )}
           {toggle('Подробный вывод (-v)', settings.verbose, () => update({ verbose: !settings.verbose }))}
-          {toggle('Записывать прямо в файл назначения (--inplace)', settings.inPlace, () => update({ inPlace: !settings.inPlace }))}
-          <p className="text-xs text-amber-700">
-            При включении rsync не создаёт временный файл с точкой в начале имени и не переименовывает его после передачи. Если копирование прервётся, файл в резервной копии может остаться неполным или повреждённым.
-          </p>
-          <p className="text-xs text-amber-700">При включении удаления файлы в резервной копии, отсутствующие в исходном каталоге, будут удалены.</p>
+          {toggle(
+            'Записывать прямо в файл назначения (--inplace)',
+            settings.inPlace,
+            () => update({ inPlace: !settings.inPlace }),
+            'rsync не создаёт временный файл с точкой в начале имени и не переименовывает его после передачи. Если копирование прервётся, файл в копии может остаться неполным или повреждённым.',
+          )}
+          {toggle(
+            'Создавать архив после синхронизации',
+            settings.createArchive,
+            () => update({ createArchive: !settings.createArchive }),
+            'Архив .tar.gz сохраняется на SMB-сервере в отдельном каталоге для этой машины.',
+          )}
+          {settings.createArchive && (
+            <div className="max-w-sm">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Хранить последних архивов</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                value={settings.archiveRetention}
+                onChange={event => update({ archiveRetention: Number(event.target.value) })}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="rsync-exclude-patterns" className="block text-sm font-medium text-slate-700 mb-1.5">
               Маски исключения (по одной на строку)

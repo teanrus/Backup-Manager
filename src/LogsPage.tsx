@@ -27,7 +27,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs }) => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Журнал событий</h2>
-        <p className="text-slate-500 text-sm mt-1">История операций резервного копирования</p>
+        <p className="text-slate-500 text-sm mt-1">История синхронизации, архивирования и восстановления</p>
       </div>
 
       {/* Filters */}
@@ -93,7 +93,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs }) => {
                     <i className={`fa-solid ${config.icon} ${config.color} text-sm`}></i>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-700">{log.message}</p>
+                    <p className="whitespace-pre-wrap break-words text-sm text-slate-700">{log.message}</p>
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className="text-xs text-slate-400 font-mono">{formatTimestamp(log.timestamp)}</span>
                       {log.jobName && (

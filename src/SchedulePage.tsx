@@ -15,7 +15,7 @@ export const SchedulePage: React.FC<SchedulePageProps> = ({ jobs, onUpdateSchedu
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Расписание</h2>
-        <p className="text-slate-500 text-sm mt-1">Настройка автоматического запуска резервного копирования</p>
+        <p className="text-slate-500 text-sm mt-1">Настройка расписания синхронизации каталогов</p>
       </div>
 
       {/* Timeline View */}

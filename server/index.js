@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { chmod, mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { chmod, lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -29,6 +30,8 @@ const defaultExcludePatterns = [
   '#*#',
 ];
 const runningJobs = new Set();
+const activeProcesses = new Map();
+const cancelledJobs = new Set();
 const scheduledRuns = new Map();
 const pendingJobs = [];
 let processingQueue = false;
@@ -50,6 +53,9 @@ const defaultState = () => ({
     deleteExtra: false,
     verbose: false,
     inPlace: false,
+    deleteDelay: false,
+    createArchive: false,
+    archiveRetention: 1,
     excludePatterns: [...defaultExcludePatterns],
     bandwidthLimit: 0,
     retries: 3,
@@ -220,21 +226,34 @@ function validateSchedule(schedule) {
 }
 
 function runCommand(command, args, options = {}) {
+  const { onStdout, onStderr, jobId, ...spawnOptions } = options;
+  if (jobId && cancelledJobs.has(jobId)) return Promise.reject(new Error('Задание остановлено.'));
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, LC_ALL: 'C' },
-      ...options,
+      ...spawnOptions,
     });
+    if (jobId) activeProcesses.set(jobId, child);
     let stdout = '';
     let stderr = '';
     const appendOutput = (current, chunk) => {
       return `${current}${chunk.toString()}`.slice(-100_000);
     };
-    child.stdout.on('data', chunk => { stdout = appendOutput(stdout, chunk); });
-    child.stderr.on('data', chunk => { stderr = appendOutput(stderr, chunk); });
-    child.once('error', reject);
+    child.stdout.on('data', chunk => {
+      stdout = appendOutput(stdout, chunk);
+      onStdout?.(chunk.toString());
+    });
+    child.stderr.on('data', chunk => {
+      stderr = appendOutput(stderr, chunk);
+      onStderr?.(chunk.toString());
+    });
+    child.once('error', error => {
+      if (jobId && activeProcesses.get(jobId) === child) activeProcesses.delete(jobId);
+      reject(error);
+    });
     child.once('close', (code, signal) => {
+      if (jobId && activeProcesses.get(jobId) === child) activeProcesses.delete(jobId);
       if (code === 0) {
         resolve(stdout);
         return;
@@ -323,7 +342,7 @@ async function mountShare(sourcePath) {
 
     if (existingMount.status !== 0) await mkdir(mountPoint, { recursive: true });
     const resolvedMountPoint = await realpath(mountPoint);
-    assertSeparatePaths(sourcePath, resolvedMountPoint);
+    if (sourcePath) assertSeparatePaths(sourcePath, resolvedMountPoint);
 
     if (existingMount.status === 0) {
       return resolvedMountPoint;
@@ -341,7 +360,7 @@ async function mountShare(sourcePath) {
   }
 }
 
-async function runBackup(jobId) {
+async function runBackup(jobId, dryRun = false) {
   const job = state.jobs.find(item => item.id === jobId);
   if (!job) {
     const error = new Error('Задание не найдено.');
@@ -366,6 +385,7 @@ async function runBackup(jobId) {
 
   const previousStatus = job.lastStatus;
   runningJobs.add(jobId);
+  cancelledJobs.delete(jobId);
   try {
     const sourcePath = path.resolve(job.sourcePath);
     const sourceStats = await stat(sourcePath);
@@ -373,8 +393,8 @@ async function runBackup(jobId) {
     assertSeparatePaths(sourcePath, path.resolve(state.smbConfig.mountPoint));
     job.lastStatus = 'running';
     await saveState();
-    await addLog('info', 'Резервное копирование запущено.', job.name);
-    pendingJobs.push(jobId);
+    await addLog('info', dryRun ? 'Проверка синхронизации запущена.' : 'Синхронизация запущена.', job.name);
+    pendingJobs.push({ jobId, dryRun, previousStatus });
   } catch (error) {
     runningJobs.delete(jobId);
     job.lastStatus = previousStatus;
@@ -384,9 +404,32 @@ async function runBackup(jobId) {
   void drainQueue();
 }
 
-async function executeBackup(jobId) {
+async function createArchive(destination, archiveDirectory, archivePrefix, retention, jobId) {
+  await mkdir(archiveDirectory, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const archivePath = path.join(archiveDirectory, `${archivePrefix}-${timestamp}.tar.gz`);
+  const temporaryArchivePath = `${archivePath}.tmp`;
+  try {
+    await runCommand('tar', ['-czf', temporaryArchivePath, '-C', destination, '.'], { jobId });
+    await rename(temporaryArchivePath, archivePath);
+  } catch (error) {
+    try {
+      await unlink(temporaryArchivePath);
+    } catch (cleanupError) {
+      if (cleanupError.code !== 'ENOENT') throw cleanupError;
+    }
+    throw error;
+  }
+  const archives = (await readdir(archiveDirectory, { withFileTypes: true }))
+    .filter(entry => entry.isFile() && entry.name.startsWith(`${archivePrefix}-`) && entry.name.endsWith('.tar.gz'))
+    .sort((left, right) => right.name.localeCompare(left.name));
+  await Promise.all(archives.slice(retention).map(entry => unlink(path.join(archiveDirectory, entry.name))));
+}
+
+async function executeBackup({ jobId, dryRun, previousStatus }) {
   const job = state.jobs.find(item => item.id === jobId);
   if (!job) return;
+  let cancelled = false;
   try {
     const sourcePath = await realpath(path.resolve(job.sourcePath));
     const sourceStats = await stat(sourcePath);
@@ -394,7 +437,7 @@ async function executeBackup(jobId) {
     assertSeparatePaths(sourcePath, path.resolve(state.smbConfig.mountPoint));
     const mountPoint = await mountShare(sourcePath);
     const destination = path.join(mountPoint, safeDirectoryName(os.hostname()), safeDirectoryName(job.name));
-    await mkdir(destination, { recursive: true });
+    if (!dryRun) await mkdir(destination, { recursive: true });
     const settings = state.settings;
     const args = [
       '-a',
@@ -407,21 +450,46 @@ async function executeBackup(jobId) {
     args.push(...settings.excludePatterns.map(pattern => `--exclude=${pattern}`));
     if (settings.compression) args.push('-z');
     if (settings.verbose) args.push('-v');
-    if (settings.deleteExtra) args.push('--delete');
+    if (settings.deleteExtra) args.push(settings.deleteDelay ? '--delete-delay' : '--delete');
     if (settings.inPlace) args.push('--inplace');
+    if (dryRun) args.push('--dry-run', '--itemize-changes');
+    else args.push('--info=progress2');
     if (settings.bandwidthLimit > 0) args.push(`--bwlimit=${settings.bandwidthLimit * 1000}`);
     args.push(`${sourcePath}${path.sep}`, `${destination}${path.sep}`);
 
     let result;
+    let progressOutput = '';
     for (let attempt = 1; attempt <= settings.retries; attempt += 1) {
       try {
-        result = await runCommand('rsync', args);
+        result = await runCommand('rsync', args, {
+          jobId,
+          onStderr: chunk => {
+            progressOutput = `${progressOutput}${chunk}`.slice(-2000);
+            const percentages = [...progressOutput.matchAll(/(\d{1,3})%/g)];
+            if (percentages.length) {
+              job.progress = Math.min(100, Number(percentages.at(-1)[1]));
+              job.progressMessage = `Передача данных: ${job.progress}%`;
+            }
+          },
+        });
         break;
       } catch (error) {
+        if (cancelledJobs.has(jobId)) throw error;
         if (attempt === settings.retries) throw error;
         await addLog('warning', `Попытка ${attempt} завершилась ошибкой: ${error.message}`, job.name);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
+    }
+
+    if (cancelledJobs.has(jobId)) throw new Error('Задание остановлено.');
+    if (dryRun) {
+      const deletions = result.split(/\r?\n/).filter(line => line.includes('*deleting'));
+      const report = deletions.length
+        ? `Будут удалены:\n${deletions.join('\n')}`
+        : 'Проверка завершена. Файлов для удаления не обнаружено.';
+      await addLog(deletions.length ? 'warning' : 'success', report, job.name);
+      job.lastStatus = previousStatus;
+      return;
     }
 
     const fileCount = result?.match(/Number of files:\s*([\d,]+)/)?.[1]?.replaceAll(',', '');
@@ -431,18 +499,34 @@ async function executeBackup(jobId) {
       const bytes = Number(totalBytes);
       job.size = bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} ГБ` : `${(bytes / 1024 ** 2).toFixed(1)} МБ`;
     }
+    if (settings.createArchive) {
+      job.progressMessage = 'Создание архива…';
+      const archiveRoot = path.join(mountPoint, safeDirectoryName(os.hostname()), 'archives');
+      const archivePrefix = safeDirectoryName(job.name);
+      await createArchive(path.join(mountPoint, safeDirectoryName(os.hostname()), safeDirectoryName(job.name)),
+        archiveRoot, archivePrefix, settings.archiveRetention, jobId);
+    }
     job.lastStatus = 'success';
     job.lastRun = new Date().toLocaleString('ru-RU', { hour12: false });
     await saveState();
     const stats = result?.match(/Number of files:.*|Total file size:.*|sent .* bytes.*received .*/g)?.join(' · ');
-    await addLog('success', `Резервное копирование завершено.${stats ? ` ${stats}` : ''}`, job.name);
+    await addLog('success', `Синхронизация завершена.${settings.createArchive ? ' Архив создан.' : ''}${stats ? ` ${stats}` : ''}`, job.name);
   } catch (error) {
-    job.lastStatus = 'error';
-    job.lastRun = new Date().toLocaleString('ru-RU', { hour12: false });
-    await saveState();
-    await addLog('error', `Ошибка резервного копирования: ${error.message}`, job.name);
+    cancelled = cancelledJobs.has(jobId);
+    if (cancelled) {
+      job.lastStatus = 'cancelled';
+      await addLog('warning', 'Задание остановлено пользователем.', job.name);
+    } else {
+      job.lastStatus = dryRun ? previousStatus : 'error';
+      if (!dryRun) job.lastRun = new Date().toLocaleString('ru-RU', { hour12: false });
+      await addLog('error', `Ошибка синхронизации: ${error.message}`, job.name);
+    }
   } finally {
+    job.progress = null;
+    job.progressMessage = undefined;
     runningJobs.delete(jobId);
+    cancelledJobs.delete(jobId);
+    await saveState();
   }
 }
 
@@ -468,6 +552,112 @@ function scheduleIsDue(job, now) {
   if (job.schedule.type === 'hourly') return now.getMinutes() === 0;
   if (job.schedule.time !== `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`) return false;
   return job.schedule.type === 'daily' || (job.schedule.type === 'weekly' && job.schedule.dayOfWeek === now.getDay());
+}
+
+async function recoveryRoot() {
+  if (!state.smbConfig.server || !state.smbConfig.share || !state.smbConfig.username) {
+    const error = new Error('Сначала настройте SMB-подключение.');
+    error.status = 400;
+    throw error;
+  }
+  const mountPoint = await mountShare();
+  const root = path.join(mountPoint, safeDirectoryName(os.hostname()));
+  await mkdir(root, { recursive: true });
+  return root;
+}
+
+async function resolveRecoveryPath(relativePath) {
+  const root = await recoveryRoot();
+  const rootStats = await lstat(root);
+  if (!rootStats.isDirectory() || rootStats.isSymbolicLink()) {
+    const error = new Error('Каталог хранилища этой машины недоступен.');
+    error.status = 400;
+    throw error;
+  }
+  if (typeof relativePath !== 'string' || path.isAbsolute(relativePath)) {
+    const error = new Error('Некорректный путь к данным восстановления.');
+    error.status = 400;
+    throw error;
+  }
+  const target = path.resolve(root, relativePath);
+  const relative = path.relative(root, target);
+  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    const error = new Error('Путь должен находиться в каталоге этой машины.');
+    error.status = 400;
+    throw error;
+  }
+  let current = root;
+  for (const component of relative.split(path.sep).filter(Boolean)) {
+    current = path.join(current, component);
+    const entryStats = await lstat(current);
+    if (entryStats.isSymbolicLink()) {
+      const error = new Error('Символические ссылки в хранилище восстановления не поддерживаются.');
+      error.status = 400;
+      throw error;
+    }
+  }
+  return target;
+}
+
+async function listRecoveryEntries(relativePath) {
+  const directory = await resolveRecoveryPath(relativePath);
+  const directoryStats = await stat(directory);
+  if (!directoryStats.isDirectory()) {
+    const error = new Error('Выбранный путь не является каталогом.');
+    error.status = 400;
+    throw error;
+  }
+  const entries = await readdir(directory, { withFileTypes: true });
+  const listed = await Promise.all(entries.map(async entry => {
+    if (!entry.isDirectory() && !entry.isFile()) return null;
+    const entryPath = path.join(directory, entry.name);
+    const entryStats = await lstat(entryPath);
+    if (entryStats.isSymbolicLink()) return null;
+    return {
+      name: entry.name,
+      path: path.posix.join(relativePath.split(path.sep).join(path.posix.sep), entry.name),
+      type: entry.isDirectory() ? 'directory' : 'file',
+      size: entryStats.size,
+      modifiedAt: entryStats.mtime.toISOString(),
+    };
+  }));
+  return listed.filter(Boolean).sort((left, right) =>
+    left.type !== right.type ? (left.type === 'directory' ? -1 : 1) : left.name.localeCompare(right.name, 'ru'),
+  );
+}
+
+async function listLocalDirectories(requestedPath) {
+  if (typeof requestedPath !== 'string' || !path.isAbsolute(requestedPath) ||
+      requestedPath.length > 4096 || requestedPath.includes('\0')) {
+    const error = new Error('Путь должен быть допустимым абсолютным путём.');
+    error.status = 400;
+    throw error;
+  }
+  const directoryPath = await realpath(path.resolve(requestedPath));
+  if (!(await stat(directoryPath)).isDirectory()) {
+    const error = new Error('Выбранный путь не является каталогом.');
+    error.status = 400;
+    throw error;
+  }
+  const entries = await readdir(directoryPath, { withFileTypes: true });
+  const directories = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+    const entryPath = path.join(directoryPath, entry.name);
+    let resolvedEntryPath = entryPath;
+    if (entry.isSymbolicLink()) {
+      try {
+        resolvedEntryPath = await realpath(entryPath);
+      } catch (error) {
+        if (error.code === 'ENOENT') continue;
+        throw error;
+      }
+      if (!(await stat(resolvedEntryPath)).isDirectory()) continue;
+    }
+    directories.push({ name: entry.name, path: resolvedEntryPath });
+  }
+  directories.sort((left, right) => left.name.localeCompare(right.name, 'ru'));
+  return { path: directoryPath, directories };
 }
 
 setInterval(() => {
@@ -505,6 +695,9 @@ async function handleRequest(request, response) {
   try {
     if (request.method === 'GET' && url.pathname === '/api/health') return sendJson(response, 200, { ready: true });
     if (request.method === 'GET' && url.pathname === '/api/state') return sendJson(response, 200, publicState());
+    if (request.method === 'GET' && url.pathname === '/api/directories') {
+      return sendJson(response, 200, await listLocalDirectories(url.searchParams.get('path')));
+    }
 
     if (request.method === 'POST' && url.pathname === '/api/jobs') {
       const body = await readJson(request);
@@ -535,9 +728,20 @@ async function handleRequest(request, response) {
       const job = state.jobs.find(item => item.id === jobRoute[1]);
       if (!job) return sendJson(response, 404, { error: 'Задание не найдено.' });
       if (request.method === 'PATCH') {
+        if (runningJobs.has(job.id)) return sendJson(response, 409, { error: 'Нельзя редактировать задание во время выполнения.' });
         const body = await readJson(request);
         if ('enabled' in body) job.enabled = Boolean(body.enabled);
         if ('schedule' in body) job.schedule = validateSchedule(body.schedule);
+        if ('name' in body) job.name = requireString(body.name, 'название', 100);
+        if ('sourcePath' in body) {
+          const sourcePath = requireString(body.sourcePath, 'путь к каталогу', 1024);
+          if (!path.isAbsolute(sourcePath)) {
+            const error = new Error('Путь к исходному каталогу должен быть абсолютным.');
+            error.status = 400;
+            throw error;
+          }
+          job.sourcePath = sourcePath;
+        }
         await saveState();
         await addLog('info', `Обновлено задание «${job.name}».`);
         return sendJson(response, 200, job);
@@ -555,6 +759,97 @@ async function handleRequest(request, response) {
     if (request.method === 'POST' && runRoute) {
       await runBackup(runRoute[1]);
       return sendJson(response, 202, { accepted: true });
+    }
+
+    const dryRunRoute = url.pathname.match(/^\/api\/jobs\/([0-9a-f-]+)\/dry-run$/i);
+    if (request.method === 'POST' && dryRunRoute) {
+      await runBackup(dryRunRoute[1], true);
+      return sendJson(response, 202, { accepted: true });
+    }
+
+    const stopRoute = url.pathname.match(/^\/api\/jobs\/([0-9a-f-]+)\/stop$/i);
+    if (request.method === 'POST' && stopRoute) {
+      const job = state.jobs.find(item => item.id === stopRoute[1]);
+      if (!job) return sendJson(response, 404, { error: 'Задание не найдено.' });
+      if (!runningJobs.has(job.id)) return sendJson(response, 409, { error: 'Задание не выполняется.' });
+      cancelledJobs.add(job.id);
+      const queuedIndex = pendingJobs.findIndex(item => item.jobId === job.id);
+      if (queuedIndex !== -1) {
+        pendingJobs.splice(queuedIndex, 1);
+        cancelledJobs.delete(job.id);
+        runningJobs.delete(job.id);
+        job.lastStatus = 'cancelled';
+        job.progress = null;
+        job.progressMessage = undefined;
+        await addLog('warning', 'Задание остановлено до начала передачи.', job.name);
+      } else {
+        activeProcesses.get(job.id)?.kill('SIGTERM');
+      }
+      await saveState();
+      return sendJson(response, 202, { accepted: true });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/recovery') {
+      const relativePath = url.searchParams.get('path') || '';
+      return sendJson(response, 200, { path: relativePath, entries: await listRecoveryEntries(relativePath) });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/recovery/download') {
+      const relativePath = url.searchParams.get('path') || '';
+      const filePath = await resolveRecoveryPath(relativePath);
+      const fileStats = await stat(filePath);
+      if (!fileStats.isFile()) {
+        const error = new Error('Скачать можно только файл.');
+        error.status = 400;
+        throw error;
+      }
+      response.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': fileStats.size,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(path.basename(filePath))}`,
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      createReadStream(filePath).pipe(response);
+      return;
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/recovery/restore') {
+      const body = await readJson(request);
+      const source = await resolveRecoveryPath(body.path);
+      const target = requireString(body.targetPath, 'каталог восстановления', 1024);
+      if (!path.isAbsolute(target) || path.resolve(target) === path.parse(target).root) {
+        const error = new Error('Каталог восстановления должен быть абсолютным путём, отличным от корня.');
+        error.status = 400;
+        throw error;
+      }
+      assertSeparatePaths(path.resolve(target), path.resolve(state.smbConfig.mountPoint));
+      const sourceStats = await stat(source);
+      if (!sourceStats.isFile() && !sourceStats.isDirectory()) {
+        const error = new Error('Выбранный объект нельзя восстановить.');
+        error.status = 400;
+        throw error;
+      }
+      await mkdir(target, { recursive: true });
+      if (await realpath(target) !== path.resolve(target)) {
+        const error = new Error('Каталог восстановления не должен проходить через символическую ссылку.');
+        error.status = 400;
+        throw error;
+      }
+      if ((await readdir(target)).length > 0) {
+        const error = new Error('Каталог восстановления должен быть пустым, чтобы избежать перезаписи файлов.');
+        error.status = 409;
+        throw error;
+      }
+      if (sourceStats.isFile() && source.endsWith('.tar.gz')) {
+        await runCommand('tar', ['--no-same-owner', '--no-same-permissions', '-xzf', source, '-C', target]);
+      } else {
+        const args = ['-a', '--no-links', '--no-devices', '--no-specials', '--one-file-system'];
+        args.push(sourceStats.isDirectory() ? `${source}${path.sep}` : source, `${target}${path.sep}`);
+        await runCommand('rsync', args);
+      }
+      await addLog('success', `Данные восстановлены в ${target}.`);
+      return sendJson(response, 200, { ok: true });
     }
 
     if (request.method === 'PUT' && url.pathname === '/api/smb') {
@@ -592,6 +887,9 @@ async function handleRequest(request, response) {
         deleteExtra: Boolean(body.deleteExtra),
         verbose: Boolean(body.verbose),
         inPlace: Boolean(body.inPlace),
+        deleteDelay: Boolean(body.deleteDelay),
+        createArchive: Boolean(body.createArchive),
+        archiveRetention: body.archiveRetention === undefined ? 1 : Number(body.archiveRetention),
         excludePatterns: requestedExcludePatterns.map(pattern => pattern.trim()).filter(Boolean),
         bandwidthLimit: Number(body.bandwidthLimit),
         retries: Number(body.retries),
@@ -603,6 +901,7 @@ async function handleRequest(request, response) {
       };
       if (      !Number.isSafeInteger(settings.bandwidthLimit) || settings.bandwidthLimit < 0 || settings.bandwidthLimit > 1000000 ||
           !Number.isInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 ||
+      !Number.isInteger(settings.archiveRetention) || settings.archiveRetention < 1 || settings.archiveRetention > 100 ||
       !Number.isInteger(settings.logRetention) || settings.logRetention < 1 || settings.logRetention > 3650 ||
           !Number.isInteger(settings.parallelJobs) || settings.parallelJobs !== 1) {
         const error = new Error('Проверьте ограничения скорости, количество попыток и срок хранения журналов.');

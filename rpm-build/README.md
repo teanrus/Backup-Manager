@@ -80,12 +80,12 @@ npm test
 bash ./rpm-build/build-rpm.sh
 ```
 
-Сценарий проверяет наличие `node`, `npm` и `rpmbuild`, устанавливает npm-зависимости, собирает frontend, подготавливает дерево `~/rpmbuild/` и запускает `rpmbuild`.
+Сценарий проверяет наличие `node`, `npm` и `rpmbuild`, устанавливает зафиксированные в `package-lock.json` зависимости, собирает frontend, берёт версию из `package.json`, подставляет её в RPM spec-шаблон, подготавливает дерево `~/rpmbuild/` и запускает `rpmbuild`.
 
 Готовый RPM ожидается по пути:
 
 ```text
-~/rpmbuild/RPMS/noarch/backup-manager-3.1.2-1.<суффикс>.noarch.rpm
+~/rpmbuild/RPMS/noarch/backup-manager-3.2.2-1.<суффикс>.noarch.rpm
 ```
 
 Фактическое имя файла может включать дополнительный суффикс дистрибутива. Посмотреть созданные пакеты можно так:
@@ -109,7 +109,7 @@ make rpm
 Установите собранный пакет с помощью пакетного менеджера целевого RPM-дистрибутива. Например, если пакет найден в `~/rpmbuild/RPMS/noarch/`:
 
 ```bash
-sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.1.2-1*.rpm
+sudo dnf install "$HOME"/rpmbuild/RPMS/noarch/backup-manager-3.2.2-1*.rpm
 ```
 
 Во время установки RPM пытается настроить systemd и запустить Nginx и API. Однако полноценный доступ к приложению появляется только после создания токена и файла авторизации — это делает следующий сценарий.
@@ -292,7 +292,7 @@ sudo /usr/share/backup-manager/scripts/uninstall.sh
 ## Состав каталога
 
 - `build-rpm.sh` — сборка frontend и RPM-пакета.
-- `SPECS/backup-manager.spec` — метаданные пакета, его зависимости, состав, миграция и RPM install hooks.
+- `SPECS/backup-manager.spec.in` — шаблон метаданных пакета, зависимостей, состава, миграции и RPM install hooks; версия подставляется при сборке из `package.json`.
 - `SOURCES/backup-manager-api.service` — systemd unit локального API.
 - `SOURCES/backup-manager.conf` — конфигурация Nginx.
 - `SOURCES/setup.sh` — создание секретов, прав доступа и запуск сервисов.

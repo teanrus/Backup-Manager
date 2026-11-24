@@ -9,6 +9,7 @@ interface SidebarProps {
 const menuItems: { page: Page; icon: string; label: string }[] = [
   { page: 'dashboard', icon: 'fa-gauge-high', label: 'Обзор' },
   { page: 'jobs', icon: 'fa-list-check', label: 'Задания' },
+  { page: 'recovery', icon: 'fa-box-open', label: 'Восстановление' },
   { page: 'schedule', icon: 'fa-clock', label: 'Расписание' },
   { page: 'smb', icon: 'fa-server', label: 'SMB сервер' },
   { page: 'logs', icon: 'fa-file-lines', label: 'Журнал' },
@@ -26,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
           </div>
           <div>
             <h1 className="font-bold text-sm">Backup Manager</h1>
-            <p className="text-xs text-slate-400">Резервное копирование</p>
+            <p className="text-xs text-slate-400">Синхронизация каталогов</p>
           </div>
         </div>
       </div>

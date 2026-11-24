@@ -1,8 +1,6 @@
 # Сборка и установка Backup Manager
 
 PKG_NAME = backup-manager
-VERSION = 3.1.2
-RELEASE = 1
 
 .PHONY: all build install rpm deb deb-build clean setup help
 

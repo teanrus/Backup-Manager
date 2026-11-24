@@ -29,7 +29,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ jobs, logs, smbConfig, onR
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Обзор</h2>
-          <p className="text-slate-500 text-sm mt-1">Состояние системы резервного копирования</p>
+          <p className="text-slate-500 text-sm mt-1">Состояние синхронизации локальных и удалённых каталогов</p>
         </div>
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${canRunBackups ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
           <div className={`w-2 h-2 rounded-full ${canRunBackups ? 'bg-green-500' : 'bg-amber-500'}`}></div>
@@ -128,6 +128,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ jobs, logs, smbConfig, onR
                   <div>
                     <p className="text-sm font-medium text-slate-700">{job.name}</p>
                     <p className="text-xs text-slate-400">{job.sourcePath}</p>
+                    {job.lastStatus === 'running' && (
+                      <div className="mt-2 w-48">
+                        <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                          <span>{job.progressMessage || 'Задание выполняется…'}</span>
+                          {job.progress != null && <span>{job.progress}%</span>}
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className={`h-full rounded-full bg-blue-500 transition-all ${job.progress == null ? 'w-1/4 animate-pulse' : ''}`}
+                            style={job.progress == null ? undefined : { width: `${job.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -135,7 +149,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ jobs, logs, smbConfig, onR
                   <button
                     onClick={() => onRunJob(job.id)}
                     disabled={!canRunBackups || job.lastStatus === 'running'}
-                    title={!canRunBackups ? 'Запуск резервного копирования поддерживается в Linux' : undefined}
+                    title={!canRunBackups ? 'Запуск синхронизации поддерживается в Linux' : undefined}
                     className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <i className="fa-solid fa-play mr-1"></i> Запустить

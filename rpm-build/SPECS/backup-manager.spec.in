@@ -1,5 +1,5 @@
 Name:           backup-manager
-Version:        3.1.2
+Version:        @APP_VERSION@
 Release:        1%{?dist}
 Summary:        Backup Manager for SMB/CIFS
 License:        MIT
@@ -235,6 +235,18 @@ fi
 %ghost /var/run/backup-manager
 
 %changelog
+* Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.2-1
+- Add an in-app directory browser for selecting synchronization sources
+- Start browsing at /home and support navigating the Linux filesystem
+- Update application and package version to 3.2.2
+
+* Tue Nov 24 2026 Backup Manager Team <backup@example.invalid> - 3.2.1-1
+- Show running synchronization progress and allow starting, stopping, editing, and deleting jobs
+- Add rsync dry-run reporting and delayed deletion
+- Add optional dated archives with configurable retention
+- Add recovery browsing, download, and restore to an empty local directory
+- Update application and package version to 3.2.1
+
 * Thu Nov 19 2026 Backup Manager Team <backup@example.invalid> - 3.1.2-1
 - Add configurable rsync exclusion masks and R-7 Office lock-file exclusions
 - Add optional in-place rsync mode
