@@ -1,5 +1,6 @@
 import React from 'react';
-import packageJson from '../package.json';
+import appIcon from '../assets/backup-manager.svg';
+import { appVersion } from './version';
 
 export const AboutPage: React.FC = () => (
   <div className="space-y-6">
@@ -10,13 +11,11 @@ export const AboutPage: React.FC = () => (
 
     <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       <div className="flex items-start gap-5">
-        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-          <i className="fa-solid fa-shield-halved text-white text-2xl"></i>
-        </div>
+        <img src={appIcon} alt="" className="w-16 h-16 rounded-2xl flex-shrink-0" />
         <div>
           <h3 className="text-xl font-bold text-slate-800">Backup Manager</h3>
           <p className="text-slate-500 mt-1">Управление синхронизацией локальных каталогов с SMB/CIFS и восстановлением данных.</p>
-          <p className="text-sm text-slate-500 mt-2">Версия: {packageJson.version}</p>
+          <p className="text-sm text-slate-500 mt-2">Версия: {appVersion}</p>
           <p className="text-sm text-slate-500 mt-2">
             Автор: Руслан Тян (
             <a className="text-blue-600 hover:underline" href="mailto:teanrus@yandex.ru">teanrus@yandex.ru</a>)

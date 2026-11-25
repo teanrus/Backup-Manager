@@ -115,7 +115,7 @@ dist/packages/backup-manager_<версия>_all.deb
 dist/packages/backup-manager_3.2.2-4_all.deb
 ```
 
-Версия приложения берётся из поля `version` в корневом `package.json`, а номер выпуска пакета — из `DEB_REVISION` в `build-deb.sh`.
+Версия приложения и номер выпуска пакета берутся из полей `version` и `packageRelease` в корневом `package.json`.
 
 ### Ручная сборка frontend
 

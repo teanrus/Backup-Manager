@@ -19,7 +19,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PKG_NAME="backup-manager"
-PKG_RELEASE="4"
 
 # ==========================================
 # [1/7] Проверка зависимостей для сборки
@@ -42,6 +41,7 @@ done
 
 cd "$PROJECT_DIR"
 PKG_VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
+PKG_RELEASE="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).packageRelease")"
 echo "=========================================="
 echo " Сборка RPM пакета: $PKG_NAME"
 echo " Версия: $PKG_VERSION-$PKG_RELEASE"
@@ -63,7 +63,7 @@ echo ""
 # [3/7] Сборка веб-приложения
 # ==========================================
 echo "[3/7] Сборка веб-приложения..."
-npm run build
+VITE_APP_VERSION="$PKG_VERSION-$PKG_RELEASE" npm run build
 echo "✓ Веб-приложение собрано"
 echo ""
 

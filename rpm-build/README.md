@@ -80,7 +80,7 @@ npm test
 bash ./rpm-build/build-rpm.sh
 ```
 
-Сценарий проверяет наличие `node`, `npm` и `rpmbuild`, устанавливает зафиксированные в `package-lock.json` зависимости, собирает frontend, берёт версию приложения из `package.json`, задаёт выпуск пакета через `PKG_RELEASE` в `build-rpm.sh`, подставляет значения в RPM spec-шаблон, подготавливает дерево `~/rpmbuild/` и запускает `rpmbuild`.
+Сценарий проверяет наличие `node`, `npm` и `rpmbuild`, устанавливает зафиксированные в `package-lock.json` зависимости, собирает frontend, берёт версию приложения и выпуск пакета из полей `version` и `packageRelease` в `package.json`, подставляет значения в RPM spec-шаблон, подготавливает дерево `~/rpmbuild/` и запускает `rpmbuild`.
 
 Готовый RPM ожидается по пути:
 

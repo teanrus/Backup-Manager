@@ -1,5 +1,7 @@
 import React from 'react';
+import appIcon from '../assets/backup-manager.svg';
 import { Page } from './types';
+import { appVersion } from './version';
 
 interface SidebarProps {
   currentPage: Page;
@@ -22,9 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
     <aside className="w-64 bg-slate-900 text-white flex flex-col min-h-screen">
       <div className="p-5 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <i className="fa-solid fa-shield-halved text-lg"></i>
-          </div>
+          <img src={appIcon} alt="" className="w-10 h-10 rounded-lg" />
           <div>
             <h1 className="font-bold text-sm">Backup Manager</h1>
             <p className="text-xs text-slate-400">Синхронизация каталогов</p>
@@ -50,16 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange }) =
           ))}
         </ul>
       </nav>
-      <div className="p-4 border-t border-slate-700">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-            <i className="fa-solid fa-user text-xs"></i>
-          </div>
-          <div>
-            <p className="text-xs font-medium"></p>
-            <p className="text-xs text-slate-400"></p>
-          </div>
-        </div>
+      <div className="p-4 border-t border-slate-700 text-xs text-slate-400">
+        Версия: {appVersion}
       </div>
     </aside>
   );

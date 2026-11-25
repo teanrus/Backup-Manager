@@ -21,13 +21,13 @@ done
 
 cd "$PROJECT_DIR"
 APP_VERSION="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version")"
-DEB_REVISION="4"
-VERSION="${APP_VERSION}-${DEB_REVISION}"
+PACKAGE_RELEASE="$(node -p "JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).packageRelease")"
+VERSION="${APP_VERSION}-${PACKAGE_RELEASE}"
 OUTPUT_DIR="$PROJECT_DIR/dist/packages"
 OUTPUT_FILE="$OUTPUT_DIR/${PACKAGE_NAME}_${VERSION}_all.deb"
 
 npm ci
-npm run build
+VITE_APP_VERSION="$VERSION" npm run build
 
 mkdir -p \
     "$PACKAGE_ROOT/DEBIAN" \
