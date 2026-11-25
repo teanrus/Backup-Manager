@@ -10,7 +10,77 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
-     id="defs89" />
+     id="defs89">
+    <filter
+       style="color-interpolation-filters:sRGB;"
+       inkscape:label="Drop Shadow"
+       id="filter4131"
+       x="-0.13976423"
+       y="-0.1806184"
+       width="1.2854098"
+       height="1.3612368">
+      <feFlood
+         flood-opacity="0.466667"
+         flood-color="rgb(116,156,198)"
+         result="flood"
+         id="feFlood4121" />
+      <feComposite
+         in="SourceGraphic"
+         in2="flood"
+         operator="out"
+         result="composite1"
+         id="feComposite4123" />
+      <feGaussianBlur
+         in="composite1"
+         stdDeviation="3"
+         result="blur"
+         id="feGaussianBlur4125" />
+      <feOffset
+         dx="0.316456"
+         dy="0"
+         result="offset"
+         id="feOffset4127" />
+      <feComposite
+         in="offset"
+         in2="SourceGraphic"
+         operator="atop"
+         result="fbSourceGraphic"
+         id="feComposite4129" />
+      <feColorMatrix
+         result="fbSourceGraphicAlpha"
+         in="fbSourceGraphic"
+         values="0 0 0 -1 0 0 0 0 -1 0 0 0 0 -1 0 0 0 0 1 0"
+         id="feColorMatrix4133" />
+      <feFlood
+         id="feFlood4135"
+         flood-opacity="0.466667"
+         flood-color="rgb(116,156,198)"
+         result="flood"
+         in="fbSourceGraphic" />
+      <feComposite
+         in2="flood"
+         id="feComposite4137"
+         in="fbSourceGraphic"
+         operator="out"
+         result="composite1" />
+      <feGaussianBlur
+         id="feGaussianBlur4139"
+         in="composite1"
+         stdDeviation="3"
+         result="blur" />
+      <feOffset
+         id="feOffset4141"
+         dx="0.316456"
+         dy="0"
+         result="offset" />
+      <feComposite
+         in2="fbSourceGraphic"
+         id="feComposite4143"
+         in="offset"
+         operator="atop"
+         result="composite2" />
+    </filter>
+  </defs>
   <sodipodi:namedview
      id="namedview87"
      pagecolor="#ffffff"
@@ -34,7 +104,7 @@
      d="M 11.296552,31.258785 A 10.248933,10.248933 0 0 1 21.545485,21.009853 h 30.746798 l 11.53005,12.811166 h 44.839077 a 10.248933,10.248933 0 0 1 10.24894,10.248932 V 94.033499 A 10.248933,10.248933 0 0 1 108.66141,104.28243 H 21.545485 A 10.248933,10.248933 0 0 1 11.296552,94.033499 Z"
      fill="#ffffff"
      id="path75"
-     style="stroke-width:1.28112;stroke:#2563eb;stroke-opacity:1" />
+     style="stroke-width:1.28112;stroke:#2563eb;stroke-opacity:1;fill:#f2f2f2;fill-opacity:1;filter:url(#filter4131)" />
   <path
      d="m 43.208093,67.814951 a 21.779788,21.779788 0 0 1 37.106305,-13.7132"
      fill="none"
