@@ -89,7 +89,7 @@ sudo /usr/share/backup-manager/scripts/setup.sh
 
 Команды выполняются из корня репозитория. Сценарий настройки создаёт секреты и выводит пароль пользователя `backup` один раз. После этого откройте `http://localhost:8080` на компьютере, где установлен сервис. При `apt remove` локальное состояние в `/var/lib/backup-manager` сохраняется; даже `apt purge` не удаляет этот каталог автоматически. Подробности о сборке, установке, диагностике и удалении — в [`deb-build/README.md`](./deb-build/README.md).
 
-### Cent OS / Red Hat / РЕД ОС 7.3+ (RPM)
+### Cent OS / Red Hat / РЕД ОС 7.3 / РЕД ОС 8+ (`.rpm`)
 
 Соберите RPM в Linux-среде с Node.js 22+, npm и `rpmbuild`:
 

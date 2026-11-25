@@ -1,8 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#2563eb"/>
-  <path d="M22 39a8 8 0 0 1 8-8h24l9 10h35a8 8 0 0 1 8 8v39a8 8 0 0 1-8 8H30a8 8 0 0 1-8-8z" fill="#fff"/>
-  <path d="M38 68a27 27 0 0 1 46-17" fill="none" stroke="#2563eb" stroke-linecap="round" stroke-width="8"/>
-  <path d="m82 39 5 13-14-1" fill="none" stroke="#2563eb" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
-  <path d="M90 73a27 27 0 0 1-46 17" fill="none" stroke="#16a34a" stroke-linecap="round" stroke-width="8"/>
-  <path d="m46 102-5-13 14 1" fill="none" stroke="#16a34a" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 128 128"
+   version="1.1"
+   id="svg85"
+   sodipodi:docname="backup-manager.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs89" />
+  <sodipodi:namedview
+     id="namedview87"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="9.0625"
+     inkscape:cx="64"
+     inkscape:cy="64"
+     inkscape:window-width="2560"
+     inkscape:window-height="1363"
+     inkscape:window-x="1"
+     inkscape:window-y="1"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg85" />
+  <rect
+     width="128"
+     height="128"
+     rx="28"
+     fill="#2563eb"
+     id="rect73" />
+  <path
+     d="M 11.296552,31.258785 A 10.248933,10.248933 0 0 1 21.545485,21.009853 h 30.746798 l 11.53005,12.811166 h 44.839077 a 10.248933,10.248933 0 0 1 10.24894,10.248932 V 94.033499 A 10.248933,10.248933 0 0 1 108.66141,104.28243 H 21.545485 A 10.248933,10.248933 0 0 1 11.296552,94.033499 Z"
+     fill="#ffffff"
+     id="path75"
+     style="stroke-width:1.28112" />
+  <path
+     d="m 43.208093,67.814951 a 21.779788,21.779788 0 0 1 37.106305,-13.7132"
+     fill="none"
+     stroke="#2563eb"
+     stroke-linecap="round"
+     stroke-width="6.45327"
+     id="path77" />
+  <path
+     d="M 78.70108,44.421846 82.734374,54.90841 71.441151,54.101751"
+     fill="none"
+     stroke="#2563eb"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     stroke-width="6.45327"
+     id="path79" />
+  <path
+     d="m 85.154351,71.848245 a 21.779788,21.779788 0 0 1 -37.106305,13.7132"
+     fill="none"
+     stroke="#16a34a"
+     stroke-linecap="round"
+     stroke-width="6.45327"
+     id="path81" />
+  <path
+     d="M 49.661363,95.241351 45.628069,84.754786 56.921293,85.561445"
+     fill="none"
+     stroke="#16a34a"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     stroke-width="6.45327"
+     id="path83" />
 </svg>
