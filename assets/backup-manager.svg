@@ -22,7 +22,7 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="9.0625"
-     inkscape:cx="64"
+     inkscape:cx="40.827586"
      inkscape:cy="64"
      inkscape:window-width="2560"
      inkscape:window-height="1363"
@@ -30,17 +30,11 @@
      inkscape:window-y="1"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg85" />
-  <rect
-     width="128"
-     height="128"
-     rx="28"
-     fill="#2563eb"
-     id="rect73" />
   <path
      d="M 11.296552,31.258785 A 10.248933,10.248933 0 0 1 21.545485,21.009853 h 30.746798 l 11.53005,12.811166 h 44.839077 a 10.248933,10.248933 0 0 1 10.24894,10.248932 V 94.033499 A 10.248933,10.248933 0 0 1 108.66141,104.28243 H 21.545485 A 10.248933,10.248933 0 0 1 11.296552,94.033499 Z"
      fill="#ffffff"
      id="path75"
-     style="stroke-width:1.28112" />
+     style="stroke-width:1.28112;stroke:#2563eb;stroke-opacity:1" />
   <path
      d="m 43.208093,67.814951 a 21.779788,21.779788 0 0 1 37.106305,-13.7132"
      fill="none"
