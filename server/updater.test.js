@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { comparePackageVersions, selectReleaseAsset } from './updater.js';
+import { comparePackageVersions, parseDebMetadata, selectReleaseAsset } from './updater.js';
 
 test('package versions compare application version and package release numerically', () => {
   assert.equal(comparePackageVersions('3.2.2-10', '3.2.2-9'), 1);
@@ -33,4 +33,14 @@ test('update selection chooses the newest matching package asset', () => {
 test('update selection rejects wrong release tag and missing package assets', () => {
   assert.throws(() => selectReleaseAsset({ tag_name: 'v3.2.2', assets: [] }, 'deb'), /Release с тегом dist/);
   assert.throws(() => selectReleaseAsset({ tag_name: 'dist', assets: [] }, 'rpm'), /не найден пакет формата RPM/);
+});
+
+test('DEB metadata parsing handles the labeled output of dpkg-deb --field', () => {
+  assert.deepEqual(parseDebMetadata(
+    'Package: backup-manager\nVersion: 3.2.3-2\nArchitecture: all\n',
+  ), {
+    name: 'backup-manager',
+    version: '3.2.3-2',
+    architecture: 'all',
+  });
 });

@@ -52,6 +52,20 @@ function parseAssetVersion(name, format) {
   return match ? `${match[1]}-${match[2]}` : null;
 }
 
+export function parseDebMetadata(output) {
+  const fields = Object.fromEntries(
+    output.split(/\r?\n/)
+      .map(line => line.match(/^([A-Za-z0-9-]+):\s*(.*)$/))
+      .filter(Boolean)
+      .map(([, name, value]) => [name.toLowerCase(), value]),
+  );
+  return {
+    name: fields.package,
+    version: fields.version,
+    architecture: fields.architecture,
+  };
+}
+
 export function selectReleaseAsset(release, format) {
   if (!release || release.tag_name !== releaseTag || release.draft || !Array.isArray(release.assets)) {
     throw new Error(`Не удалось получить опубликованный GitHub Release с тегом ${releaseTag}.`);
@@ -160,10 +174,16 @@ function verifyPackage(packagePath, format, expectedVersion) {
   if (result.error || result.status !== 0) {
     throw new Error(`Не удалось проверить метаданные загруженного пакета: ${result.error?.message || result.stderr.trim()}`);
   }
-  const [name, version, architecture] = result.stdout.trim().split(/\r?\n/);
+  let metadata;
+  if (format === 'deb') {
+    metadata = parseDebMetadata(result.stdout);
+  } else {
+    const [name, version, architecture] = result.stdout.trim().split(/\r?\n/);
+    metadata = { name, version, architecture };
+  }
   const expectedArchitecture = format === 'deb' ? 'all' : 'noarch';
-  if (name !== 'backup-manager' || architecture !== expectedArchitecture ||
-      comparePackageVersions(version, expectedVersion) !== 0) {
+  if (metadata.name !== 'backup-manager' || metadata.architecture !== expectedArchitecture ||
+      !metadata.version || comparePackageVersions(metadata.version, expectedVersion) !== 0) {
     throw new Error('Метаданные загруженного пакета не совпадают с ожидаемыми.');
   }
 }
