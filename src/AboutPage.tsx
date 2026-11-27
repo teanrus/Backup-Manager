@@ -94,10 +94,10 @@ export const AboutPage: React.FC = () => {
             <i className="fa-brands fa-github" aria-hidden="true"></i>
             Официальный репозиторий
           </a>
-          <p className="text-sm text-slate-500 mt-2">
+          {/* <p className="text-sm text-slate-500 mt-2">
             Автор: Руслан Тян (
             <a className="text-blue-600 hover:underline" href="mailto:teanrus@yandex.ru">teanrus@yandex.ru</a>)
-          </p>
+          </p> */}
           <a
             className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
             href="https://boosty.to/backup_manager/donate"
@@ -107,11 +107,11 @@ export const AboutPage: React.FC = () => {
             <i className="fa-solid fa-mug-hot" aria-hidden="true"></i>
             Автору на кофе с печенькой
           </a>
-          <div className="flex flex-wrap gap-2 mt-3">
+          {/* <div className="flex flex-wrap gap-2 mt-3">
             <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">React + Node.js</span>
             <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs rounded-full font-medium">Локальный backend</span>
             <span className="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs rounded-full font-medium">Linux backend</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>
@@ -182,7 +182,7 @@ export const AboutPage: React.FC = () => {
       </p>
     </section>
 
-    <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    {/* <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       <h3 className="font-semibold text-slate-800 mb-4">Что умеет приложение</h3>
       <ul className="space-y-3 text-sm text-slate-600">
         <li><i className="fa-solid fa-check text-green-600 mr-2"></i>Хранить задания, SMB-параметры и настройки локально.</li>
@@ -195,7 +195,7 @@ export const AboutPage: React.FC = () => {
       <p className="mt-5 text-sm text-slate-500">
         Для работы с SMB на Linux необходимы Node.js 18+, rsync, smbclient, cifs-utils и права на монтирование сетевых ресурсов.
       </p>
-    </section>
+    </section> */}
 
   </div>
   );
