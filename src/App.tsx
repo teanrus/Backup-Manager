@@ -118,7 +118,7 @@ function App() {
       case 'logs':
         return <LogsPage logs={appState.logs} />;
       case 'settings':
-        return <SettingsPage settings={appState.settings} onSave={handleSaveSettings} />;
+        return <SettingsPage settings={appState.settings} backupMountPoint={appState.smbConfig.mountPoint} onSave={handleSaveSettings} />;
       case 'about':
         return <AboutPage />;
       default:

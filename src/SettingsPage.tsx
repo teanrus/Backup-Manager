@@ -3,10 +3,11 @@ import { BackupSettings } from './api';
 
 interface SettingsPageProps {
   settings: BackupSettings;
+  backupMountPoint: string;
   onSave: (settings: BackupSettings) => Promise<boolean>;
 }
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSettings, onSave }) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSettings, backupMountPoint, onSave }) => {
   const [settings, setSettings] = useState(savedSettings);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -150,6 +151,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
           </div>
         </div>
       </div>
+
+      <section className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm p-6">
+        <h3 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+          <i className="fa-solid fa-shield-virus text-amber-700" aria-hidden="true"></i>
+          Исключение в политике Kaspersky Security Center
+        </h3>
+        <p className="text-sm text-amber-900">
+          Чтобы проверить, влияет ли антивирус на создание архивов, добавьте точку монтирования резервной копии в исключения
+          политики Kaspersky Endpoint Security for Linux, применяемой к этой машине:
+        </p>
+        <code className="block mt-3 px-3 py-2 rounded-lg bg-white border border-amber-200 text-sm font-mono text-slate-800 break-all">
+          {backupMountPoint || 'Точка монтирования не настроена'}
+        </code>
+        <p className="text-xs text-amber-800 mt-3">
+          Это только подсказка: Backup Manager не изменяет настройки Kaspersky или политику KSC. Исключение снижает антивирусную
+          проверку указанного каталога; ограничьте его этой точкой монтирования и соблюдайте правила безопасности организации.
+        </p>
+      </section>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
