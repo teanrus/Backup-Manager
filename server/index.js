@@ -10,9 +10,11 @@ const dataDir = path.resolve(process.env.BACKUP_MANAGER_DATA_DIR || path.join(os
 const statePath = path.join(dataDir, 'state.json');
 const apiTokenPath = process.env.BACKUP_MANAGER_API_TOKEN_FILE;
 const maxRequestBytes = 1024 * 1024;
+const stateSchemaVersion = 1;
 const defaultExcludePatterns = [
   '.*',
   '/thinclient_drives/***',
+  '*.desktop',
   '*.tmp',
   '*.tmp.*',
   '*.temp',
@@ -37,6 +39,7 @@ const pendingJobs = [];
 let processingQueue = false;
 
 const defaultState = () => ({
+  schemaVersion: stateSchemaVersion,
   jobs: [],
   logs: [],
   smbConfig: {
@@ -56,6 +59,8 @@ const defaultState = () => ({
     deleteDelay: false,
     createArchive: false,
     archiveRetention: 1,
+    excludeLargeFiles: false,
+    maxFileSizeMB: 50,
     excludePatterns: [...defaultExcludePatterns],
     bandwidthLimit: 0,
     retries: 3,
@@ -70,12 +75,14 @@ const defaultState = () => ({
 await mkdir(dataDir, { recursive: true, mode: 0o700 });
 await chmod(dataDir, 0o700);
 
+let stateNeedsMigration = false;
+
 async function loadState() {
   try {
     const contents = await readFile(statePath, 'utf8');
     const saved = JSON.parse(contents);
     const defaults = defaultState();
-    return {
+    const loadedState = {
       ...defaults,
       ...saved,
       jobs: Array.isArray(saved.jobs) ? saved.jobs : [],
@@ -83,6 +90,15 @@ async function loadState() {
       smbConfig: { ...defaults.smbConfig, ...saved.smbConfig },
       settings: { ...defaults.settings, ...saved.settings },
     };
+    if ((saved.schemaVersion || 0) < stateSchemaVersion) {
+      const patterns = Array.isArray(loadedState.settings.excludePatterns)
+        ? loadedState.settings.excludePatterns
+        : defaults.settings.excludePatterns;
+      loadedState.settings.excludePatterns = [...new Set([...patterns, '*.desktop'])];
+      loadedState.schemaVersion = stateSchemaVersion;
+      stateNeedsMigration = true;
+    }
+    return loadedState;
   } catch (error) {
     if (error.code === 'ENOENT') return defaultState();
     throw new Error(`Не удалось прочитать файл состояния ${statePath}: ${error.message}`);
@@ -113,9 +129,13 @@ function saveState() {
   return saveQueue;
 }
 
+if (stateNeedsMigration) await saveState();
+
 function publicState() {
+  const publicData = { ...state };
+  delete publicData.schemaVersion;
   return {
-    ...state,
+    ...publicData,
     smbConfig: {
       ...state.smbConfig,
       password: '',
@@ -460,6 +480,7 @@ async function executeBackup({ jobId, dryRun, previousStatus }) {
       '--stats',
     ];
     args.push(...settings.excludePatterns.map(pattern => `--exclude=${pattern}`));
+    if (settings.excludeLargeFiles) args.push(`--max-size=${settings.maxFileSizeMB}MB`);
     if (settings.compression) args.push('-z');
     if (settings.verbose) args.push('-v');
     if (settings.deleteExtra) args.push(settings.deleteDelay ? '--delete-delay' : '--delete');
@@ -913,6 +934,8 @@ async function handleRequest(request, response) {
         deleteDelay: Boolean(body.deleteDelay),
         createArchive: Boolean(body.createArchive),
         archiveRetention: body.archiveRetention === undefined ? 1 : Number(body.archiveRetention),
+        excludeLargeFiles: Boolean(body.excludeLargeFiles),
+        maxFileSizeMB: body.maxFileSizeMB === undefined ? 50 : Number(body.maxFileSizeMB),
         excludePatterns: requestedExcludePatterns.map(pattern => pattern.trim()).filter(Boolean),
         bandwidthLimit: Number(body.bandwidthLimit),
         retries: Number(body.retries),
@@ -925,6 +948,7 @@ async function handleRequest(request, response) {
       if (      !Number.isSafeInteger(settings.bandwidthLimit) || settings.bandwidthLimit < 0 || settings.bandwidthLimit > 1000000 ||
           !Number.isInteger(settings.retries) || settings.retries < 1 || settings.retries > 10 ||
       !Number.isInteger(settings.archiveRetention) || settings.archiveRetention < 1 || settings.archiveRetention > 100 ||
+      !Number.isInteger(settings.maxFileSizeMB) || settings.maxFileSizeMB < 1 || settings.maxFileSizeMB > 1000000 ||
       !Number.isInteger(settings.logRetention) || settings.logRetention < 1 || settings.logRetention > 3650 ||
           !Number.isInteger(settings.parallelJobs) || settings.parallelJobs !== 1) {
         const error = new Error('Проверьте ограничения скорости, количество попыток и срок хранения журналов.');

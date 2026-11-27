@@ -14,6 +14,25 @@ let backend;
 let staleMountPoint;
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const testToken = 'test-api-token';
+const legacyExcludePatterns = [
+  '.*',
+  '/thinclient_drives/***',
+  '*.tmp',
+  '*.tmp.*',
+  '*.temp',
+  '*.temp.*',
+  '*.swp',
+  '*.swo',
+  '*.swx',
+  '*.part',
+  '*.partial',
+  '*.crdownload',
+  '*.download',
+  '*~',
+  '~$*',
+  '.~lock.*',
+  '#*#',
+];
 
 function apiRequest(url, options = {}) {
   return fetch(url, {
@@ -27,6 +46,9 @@ function apiRequest(url, options = {}) {
 
 before(async () => {
   dataDir = await mkdtemp(path.join(os.tmpdir(), 'backup-manager-api-'));
+  await writeFile(path.join(dataDir, 'state.json'), JSON.stringify({
+    settings: { excludePatterns: legacyExcludePatterns },
+  }));
   staleMountPoint = path.join(dataDir, 'stale-mount');
   const mockBinDir = path.join(dataDir, 'bin');
   await mkdir(mockBinDir);
@@ -150,13 +172,17 @@ test('API persists application data and protects SMB credentials', async () => {
 
   const stateResponse = await apiRequest(`${baseUrl}/api/state`);
   const state = await stateResponse.json();
+  assert.ok(state.settings.excludePatterns.includes('*.desktop'));
   assert.equal(state.jobs.length, 1);
   assert.equal(state.jobs[0].enabled, false);
   assert.equal(state.jobs[0].name, 'Documents updated');
   assert.equal(state.smbConfig.password, '');
   assert.equal(state.smbConfig.passwordConfigured, true);
   const persisted = await readFile(path.join(dataDir, 'state.json'), 'utf8');
-  assert.equal(JSON.parse(persisted).smbConfig.password, 'test-secret');
+  const persistedState = JSON.parse(persisted);
+  assert.equal(persistedState.smbConfig.password, 'test-secret');
+  assert.equal(persistedState.schemaVersion, 1);
+  assert.ok(persistedState.settings.excludePatterns.includes('*.desktop'));
 
   const crossOrigin = await apiRequest(`${baseUrl}/api/state`, { headers: { Origin: 'http://attacker.example' } });
   assert.equal(crossOrigin.status, 403);
@@ -173,6 +199,12 @@ test('API rejects mutations without a JSON content type', async () => {
 test('API requires authentication when a token file is configured', async () => {
   const response = await fetch(`${baseUrl}/api/state`);
   assert.equal(response.status, 401);
+});
+
+test('large-file transfer limit is disabled by default with a 50 MB threshold', async () => {
+  const state = await (await apiRequest(`${baseUrl}/api/state`)).json();
+  assert.equal(state.settings.excludeLargeFiles, false);
+  assert.equal(state.settings.maxFileSizeMB, 50);
 });
 
 test('local directory picker lists directories and resolves symlink paths', async () => {
@@ -228,12 +260,14 @@ test('backup treats a directory on the root filesystem as an unmounted mountpoin
   assert.ok(rsyncArgs.includes('--no-specials'));
   assert.ok(!rsyncArgs.includes('--inplace'));
   assert.ok(rsyncArgs.includes('--one-file-system'));
+  assert.ok(!rsyncArgs.some(argument => argument.startsWith('--max-size=')));
   assert.ok(rsyncArgs.includes('--exclude=.*'));
   assert.ok(rsyncArgs.includes('--exclude=/thinclient_drives/***'));
   assert.ok(rsyncArgs.includes('--exclude=.~lock.*'));
   assert.ok(rsyncArgs.includes('--exclude=~$*'));
   for (const pattern of [
     '--exclude=*.tmp',
+    '--exclude=*.desktop',
     '--exclude=*.tmp.*',
     '--exclude=*.temp',
     '--exclude=*.temp.*',
@@ -315,11 +349,13 @@ test('dry-run reports deletions and passes delete-delay to rsync', async () => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       compression: false, deleteExtra: true, deleteDelay: true, verbose: false, inPlace: false,
-      createArchive: false, archiveRetention: 1, excludePatterns: [], bandwidthLimit: 0, retries: 1,
+      createArchive: false, archiveRetention: 1, excludeLargeFiles: true, maxFileSizeMB: 25,
+      excludePatterns: [], bandwidthLimit: 0, retries: 1,
       notifyEmail: '', notifyOnError: true, notifyOnSuccess: false, logRetention: 30, parallelJobs: 1,
     }),
   });
   assert.equal(settingsResponse.status, 200);
+  assert.equal((await settingsResponse.json()).maxFileSizeMB, 25);
 
   const jobResponse = await apiRequest(`${baseUrl}/api/jobs`, {
     method: 'POST',
@@ -341,6 +377,7 @@ test('dry-run reports deletions and passes delete-delay to rsync', async () => {
   assert.ok(args.includes('--dry-run'));
   assert.ok(args.includes('--itemize-changes'));
   assert.ok(args.includes('--delete-delay'));
+  assert.ok(args.includes('--max-size=25MB'));
 });
 
 test('stop terminates an active rsync job', async () => {

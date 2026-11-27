@@ -107,6 +107,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
               />
             </div>
           )}
+          {toggle(
+            'Не передавать большие файлы',
+            settings.excludeLargeFiles,
+            () => update({ excludeLargeFiles: !settings.excludeLargeFiles }),
+            'Файлы крупнее лимита не копируются. Уже существующие в резервной копии файлы сохраняются.',
+          )}
+          {settings.excludeLargeFiles && (
+            <div className="max-w-sm">
+              <label htmlFor="max-file-size-mb" className="block text-sm font-medium text-slate-700 mb-1.5">
+                Максимальный размер файла (МБ, 1 МБ = 1 000 000 байт)
+              </label>
+              <input
+                id="max-file-size-mb"
+                type="number"
+                min={1}
+                max={1000000}
+                step={1}
+                value={settings.maxFileSizeMB}
+                onChange={event => update({ maxFileSizeMB: Number(event.target.value) })}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="rsync-exclude-patterns" className="block text-sm font-medium text-slate-700 mb-1.5">
               Маски исключения (по одной на строку)
@@ -120,7 +143,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings: savedSetti
               aria-describedby="rsync-exclude-help"
             />
             <p id="rsync-exclude-help" className="text-xs text-slate-500 mt-1.5">
-              Используются шаблоны rsync. Удалите стандартную строку, чтобы отключить соответствующее исключение, или добавьте свою маску. Файлы блокировки Р-7 Офис `.~lock.*` и `~$*` исключаются по умолчанию.
+              Используются шаблоны rsync. Удалите стандартную строку, чтобы отключить соответствующее исключение, или добавьте свою маску. Ярлыки рабочего стола Linux `*.desktop`, временные файлы и файлы блокировок Р-7 Офис исключаются по умолчанию.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">

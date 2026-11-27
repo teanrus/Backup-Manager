@@ -17,7 +17,7 @@ const emptyState: AppState = {
   smbConfig: { server: '', share: '', username: '', password: '', domain: 'WORKGROUP', mountPoint: '/mnt/backup', connected: false },
   settings: {
     compression: true, deleteExtra: false, verbose: false, inPlace: false, deleteDelay: false,
-    createArchive: false, archiveRetention: 1, excludePatterns: [],
+    createArchive: false, archiveRetention: 1, excludeLargeFiles: false, maxFileSizeMB: 50, excludePatterns: [],
     bandwidthLimit: 0, retries: 3,
     notifyEmail: '', notifyOnError: true, notifyOnSuccess: false, logRetention: 30, parallelJobs: 1,
   },

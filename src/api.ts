@@ -8,6 +8,8 @@ export interface BackupSettings {
   deleteDelay: boolean;
   createArchive: boolean;
   archiveRetention: number;
+  excludeLargeFiles: boolean;
+  maxFileSizeMB: number;
   excludePatterns: string[];
   bandwidthLimit: number;
   retries: number;
