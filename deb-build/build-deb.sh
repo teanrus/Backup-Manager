@@ -44,6 +44,8 @@ mkdir -p \
 
 cp -a "$PROJECT_DIR/dist/." "$PACKAGE_ROOT/usr/share/backup-manager/web/"
 install -m 644 "$PROJECT_DIR/server/index.js" "$PACKAGE_ROOT/usr/share/backup-manager/server/index.js"
+install -m 644 "$PROJECT_DIR/server/updater.js" "$PACKAGE_ROOT/usr/share/backup-manager/server/updater.js"
+install -m 644 "$PROJECT_DIR/server/install-package-update.sh" "$PACKAGE_ROOT/usr/share/backup-manager/server/install-package-update.sh"
 install -m 644 "$PROJECT_DIR/server/package.json" "$PACKAGE_ROOT/usr/share/backup-manager/server/package.json"
 install -m 644 "$SCRIPT_DIR/../rpm-build/SOURCES/backup-manager.desktop" "$PACKAGE_ROOT/usr/share/applications/backup-manager.desktop"
 install -m 644 "$PROJECT_DIR/assets/backup-manager.svg" "$PACKAGE_ROOT/usr/share/icons/hicolor/scalable/apps/backup-manager.svg"

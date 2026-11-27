@@ -207,6 +207,11 @@ test('large-file transfer limit is disabled by default with a 50 MB threshold', 
   assert.equal(state.settings.maxFileSizeMB, 50);
 });
 
+test('update status is idle before an update is requested', async () => {
+  const status = await (await apiRequest(`${baseUrl}/api/updates/status`)).json();
+  assert.deepEqual(status, { status: 'idle' });
+});
+
 test('local directory picker lists directories and resolves symlink paths', async () => {
   const pickerRoot = path.join(dataDir, 'picker-root');
   await mkdir(path.join(pickerRoot, 'Documents'), { recursive: true });

@@ -31,6 +31,27 @@ export interface AppState {
   };
 }
 
+export interface UpdateInfo {
+  currentVersion: string;
+  latestVersion: string;
+  updateAvailable: boolean;
+  format: 'deb' | 'rpm';
+  canInstall: boolean;
+  installUnavailableReason: string;
+  releaseUrl: string;
+  assetName: string;
+}
+
+export interface UpdateInstallStatus {
+  status: 'idle' | 'installing' | 'installed' | 'failed';
+  targetVersion?: string;
+  unitName?: string;
+  exitCode?: number;
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
 export interface RecoveryEntry {
   name: string;
   path: string;
@@ -79,6 +100,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   getState: () => request<AppState>('/api/state'),
+  checkForUpdate: () => request<UpdateInfo>('/api/updates'),
+  installUpdate: () => request<UpdateInstallStatus>('/api/updates/install', { method: 'POST' }),
+  getUpdateStatus: () => request<UpdateInstallStatus>('/api/updates/status'),
   getLocalDirectories: (directoryPath: string) =>
     request<{ path: string; directories: LocalDirectory[] }>(
       `/api/directories?path=${encodeURIComponent(directoryPath)}`,

@@ -99,6 +99,8 @@ cp -r "$PROJECT_DIR/dist/"* ~/rpmbuild/SOURCES/dist/
 rm -rf ~/rpmbuild/SOURCES/server
 mkdir -p ~/rpmbuild/SOURCES/server
 cp "$PROJECT_DIR/server/index.js" ~/rpmbuild/SOURCES/server/
+cp "$PROJECT_DIR/server/updater.js" ~/rpmbuild/SOURCES/server/
+cp "$PROJECT_DIR/server/install-package-update.sh" ~/rpmbuild/SOURCES/server/
 cp "$PROJECT_DIR/server/package.json" ~/rpmbuild/SOURCES/server/
 
 cp "$PROJECT_DIR/assets/backup-manager.svg" ~/rpmbuild/SOURCES/$PKG_NAME.svg

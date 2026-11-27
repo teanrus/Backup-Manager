@@ -5,9 +5,12 @@ import { createReadStream } from 'node:fs';
 import { chmod, lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { checkForUpdate, readUpdateStatus, startPackageUpdate } from './updater.js';
 
 const dataDir = path.resolve(process.env.BACKUP_MANAGER_DATA_DIR || path.join(os.homedir(), '.backup-manager'));
 const statePath = path.join(dataDir, 'state.json');
+const serverDirectory = path.dirname(fileURLToPath(import.meta.url));
 const apiTokenPath = process.env.BACKUP_MANAGER_API_TOKEN_FILE;
 const maxRequestBytes = 1024 * 1024;
 const stateSchemaVersion = 1;
@@ -37,6 +40,7 @@ const cancelledJobs = new Set();
 const scheduledRuns = new Map();
 const pendingJobs = [];
 let processingQueue = false;
+let updateInstallStarting = false;
 
 const defaultState = () => ({
   schemaVersion: stateSchemaVersion,
@@ -385,6 +389,12 @@ async function runBackup(jobId, dryRun = false) {
   if (!job) {
     const error = new Error('Задание не найдено.');
     error.status = 404;
+    throw error;
+  }
+  const updateStatus = await readUpdateStatus(dataDir);
+  if (updateInstallStarting || updateStatus.status === 'installing') {
+    const error = new Error('Нельзя запускать синхронизацию во время установки обновления.');
+    error.status = 409;
     throw error;
   }
   if (runningJobs.has(jobId)) {
@@ -739,6 +749,57 @@ async function handleRequest(request, response) {
   try {
     if (request.method === 'GET' && url.pathname === '/api/health') return sendJson(response, 200, { ready: true });
     if (request.method === 'GET' && url.pathname === '/api/state') return sendJson(response, 200, publicState());
+    if (request.method === 'GET' && url.pathname === '/api/updates') {
+      return sendJson(response, 200, await checkForUpdate());
+    }
+    if (request.method === 'GET' && url.pathname === '/api/updates/status') {
+      return sendJson(response, 200, await readUpdateStatus(dataDir));
+    }
+    if (request.method === 'POST' && url.pathname === '/api/updates/install') {
+      if (process.getuid?.() !== 0) {
+        const error = new Error('Для установки обновлений backend должен работать с правами root.');
+        error.status = 403;
+        throw error;
+      }
+      if (runningJobs.size > 0) {
+        const error = new Error('Нельзя обновлять приложение, пока выполняются задания синхронизации.');
+        error.status = 409;
+        throw error;
+      }
+      if (updateInstallStarting) {
+        const error = new Error('Установка обновления уже запускается.');
+        error.status = 409;
+        throw error;
+      }
+      updateInstallStarting = true;
+      try {
+        const currentUpdateStatus = await readUpdateStatus(dataDir);
+        if (currentUpdateStatus.status === 'installing') {
+          const error = new Error('Обновление уже устанавливается.');
+          error.status = 409;
+          throw error;
+        }
+        const update = await checkForUpdate();
+        if (!update.updateAvailable) {
+          const error = new Error('Установлена последняя доступная версия.');
+          error.status = 409;
+          throw error;
+        }
+        if (!update.canInstall) {
+          const error = new Error(update.installUnavailableReason);
+          error.status = 501;
+          throw error;
+        }
+        const status = await startPackageUpdate(
+          update,
+          dataDir,
+          path.join(serverDirectory, 'install-package-update.sh'),
+        );
+        return sendJson(response, 202, status);
+      } finally {
+        updateInstallStarting = false;
+      }
+    }
     if (request.method === 'GET' && url.pathname === '/api/directories') {
       return sendJson(response, 200, await listLocalDirectories(url.searchParams.get('path')));
     }
