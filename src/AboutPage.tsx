@@ -94,10 +94,10 @@ export const AboutPage: React.FC = () => {
             <i className="fa-brands fa-github" aria-hidden="true"></i>
             Официальный репозиторий
           </a>
-          <p className="text-sm text-slate-500 mt-2">
+          {/* <p className="text-sm text-slate-500 mt-2">
             Автор: Руслан Тян (
             <a className="text-blue-600 hover:underline" href="mailto:teanrus@yandex.ru">teanrus@yandex.ru</a>)
-          </p>
+          </p> */}
           <a
             className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
             href="https://boosty.to/backup_manager/donate"
